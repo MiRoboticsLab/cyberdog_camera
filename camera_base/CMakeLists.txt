@@ -82,6 +82,7 @@ install(DIRECTORY
 )
 
 ament_export_libraries(${PROJECT_NAME})
+ament_export_include_directories(include)
 
 install(TARGETS
   ${PROJECT_NAME}
