@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Beijing Xiaomi Mobile Software Co., Ltd. All rights reserved.
+// Copyright (c) 2021  Xiaomi Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,33 +11,41 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef CAMERA_API__CAMERA_API_HPP_
-#define CAMERA_API__CAMERA_API_HPP_
 
-#include <stdint.h>
-#include <opencv2/opencv.hpp>
+#ifndef CAMERA_ALGO__BODY_DETECTOR_HPP_
+#define CAMERA_ALGO__BODY_DETECTOR_HPP_
+
+#include <vector>
+#include "camera_base/camera_buffer.hpp"
+
+#ifdef HAVE_VISION_LIB
+#include <athena_vision/body_detect_api.h>
+#endif
 
 namespace cyberdog
 {
 namespace camera
 {
 
-typedef void * CameraHandle;
-typedef int (* FrameCallback)(cv::Mat & frame, uint64_t timestamp);
-
-enum ImageFormat
+#ifdef HAVE_VISION_LIB
+class BodyDetector
 {
-  kImageFormatBGR = 0,
-  kImageFormatRGB,
-  kImageFormatInvalid,
-};
+public:
+  static BodyDetector * create();
+  void detect(ImageBuffer & image, std::vector<SingleBodyInfo> & out);
 
-CameraHandle OpenCamera(int camera_id, int & status);
-int CloseCamera(CameraHandle);
-int StartStream(CameraHandle handle, ImageFormat format, int width, int height, FrameCallback cb);
-int StopStream(CameraHandle handle);
+  ~BodyDetector();
+
+private:
+  BodyDetector();
+  bool initialize();
+
+  bool m_init;
+  AlgoHandle m_apiHandle;
+};
+#endif
 
 }  // namespace camera
 }  // namespace cyberdog
 
-#endif  // CAMERA_API__CAMERA_API_HPP_
+#endif  // CAMERA_ALGO__BODY_DETECTOR_HPP_

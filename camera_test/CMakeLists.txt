@@ -9,13 +9,23 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(camera_api REQUIRED)
+find_package(camera_service REQUIRED)
 find_package(OpenCV REQUIRED)
 
 add_executable(${PROJECT_NAME}
   src/camera_test.cpp
 )
 
+add_executable(camera_server
+  src/camera_server.cpp
+)
+
 ament_target_dependencies(${PROJECT_NAME} camera_api OpenCV rclcpp)
+ament_target_dependencies(camera_server camera_service rclcpp)
+
+install(TARGETS
+  camera_server
+  DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

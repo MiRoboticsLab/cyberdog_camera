@@ -28,7 +28,7 @@ install(DIRECTORY
 )
 
 ament_export_include_directories(include)
-ament_export_dependencies(rclcpp)
+ament_export_libraries(${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

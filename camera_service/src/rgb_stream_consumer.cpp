@@ -12,32 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define LOG_TAG "MonoStream"
-#include <string>
+#define LOG_TAG "RGBStream"
 #include <memory>
 #include <utility>
-#include "rgb_stream.hpp"
+#include "camera_service/rgb_stream_consumer.hpp"
+#include "camera_service/camera_manager.hpp"
 #include "camera_utils/camera_log.hpp"
+#include "camera_utils/camera_utils.hpp"
 
 namespace cyberdog
 {
 namespace camera
 {
 
-RgbStream::RgbStream(
-    Size2D<uint32_t> size,
-    ImageFormat format, FrameCallback cb)
+RGBStreamConsumer::RGBStreamConsumer(Size2D<uint32_t> size)
 : StreamConsumer(size),
-  format_(format),
-  callback_(cb)
+  m_buffer(NULL)
+{
+  auto qos = rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 10));
+  qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+  m_publisher =
+    CameraManager::getInstance()->create_publisher<sensor_msgs::msg::Image>("image", qos);
+}
+
+RGBStreamConsumer::~RGBStreamConsumer()
 {
 }
 
-RgbStream::~RgbStream()
-{
-}
-
-bool RgbStream::threadInitialize()
+bool RGBStreamConsumer::threadInitialize()
 {
   if (!StreamConsumer::threadInitialize()) {
     return false;
@@ -51,31 +53,45 @@ bool RgbStream::threadInitialize()
   input_params.layout = NvBufferLayout_Pitch;
   input_params.colorFormat = NvBufferColorFormat_ABGR32;
 
-  if (NvBufferCreateEx(&rgba_fd_, &input_params) < 0) {
+  if (NvBufferCreateEx(&m_rgbaFd, &input_params) < 0) {
     CAM_INFO("Failed to create NvBuffer.");
     return false;
   }
 
-  format_convert_ = new ColorConvert(m_size.width(), m_size.height());
-  format_convert_->initialze(rgba_fd_);
+  // rgb buffer
+  m_buffer = (unsigned char *)malloc(m_size.width() * m_size.height() * 3);
+  if (!m_buffer) {
+    CAM_INFO("Failed to malloc Buffer.");
+    return false;
+  }
+
+  m_convert = new ColorConvert(m_size.width(), m_size.height());
+  m_convert->initialze(m_rgbaFd);
 
   return true;
 }
 
-bool RgbStream::threadShutdown()
+bool RGBStreamConsumer::threadShutdown()
 {
-  format_convert_->release();
-  delete format_convert_;
+  if (m_buffer) {
+    free(m_buffer);
+  }
 
-  if (rgba_fd_ > 0) {
-    NvBufferDestroy(rgba_fd_);
+  m_convert->release();
+  delete m_convert;
+
+  if (m_rgbaFd > 0) {
+    NvBufferDestroy(m_rgbaFd);
   }
 
   return StreamConsumer::threadShutdown();
 }
 
-bool RgbStream::processBuffer(Buffer * buffer)
+bool RGBStreamConsumer::processBuffer(Buffer * buffer)
 {
+  struct timespec ts;
+
+  clock_gettime(CLOCK_REALTIME, &ts);
   if (!buffer) {
     return false;
   }
@@ -83,15 +99,6 @@ bool RgbStream::processBuffer(Buffer * buffer)
   float frameRate;
   if (getFrameRate(frameRate)) {
     CAM_INFO("%.2f frames per second", frameRate);
-  }
-
-  uint64_t ts = 0;
-  IBuffer * iBuffer = Argus::interface_cast<IBuffer>(buffer);
-  const Argus::CaptureMetadata * metadata = iBuffer->getMetadata();
-  const Argus::ICaptureMetadata * iMetadata = Argus::interface_cast<const Argus::ICaptureMetadata>(
-    metadata);
-  if (iMetadata) {
-    ts = iMetadata->getSensorTimestamp();
   }
 
   DmaBuffer * dma_buf = DmaBuffer::fromArgusBuffer(buffer);
@@ -116,36 +123,44 @@ bool RgbStream::processBuffer(Buffer * buffer)
   transform_params.src_rect = src_rect;
   transform_params.dst_rect = dest_rect;
 
-  NvBufferTransform(fd, rgba_fd_, &transform_params);
+  NvBufferTransform(fd, m_rgbaFd, &transform_params);
+
+  // convert rgba to rgb
+  m_convert->convertRGBAToBGR(m_buffer);
 
   ImageBuffer buf;
   memset(&buf, 0, sizeof(buf));
   buf.res = m_size;
-  buf.fd = fd;
-  buf.timestamp.tv_sec = ts / (1000 * 1000 * 1000);
-  buf.timestamp.tv_nsec = ts % (1000 * 1000 * 1000);
+  buf.data = m_buffer;
+  buf.timestamp = ts;
 
-  if (callback_) {
-    cv::Mat frame = cv::Mat(m_size.width(), m_size.height(), CV_8UC3, cv::Scalar(0, 0, 0));
-    // convert rgba to rgb
-    if (kImageFormatBGR == format_) {
-      format_convert_->convertRGBAToBGR(frame.data);
-    } else if (kImageFormatRGB == format_) {
-      format_convert_->convertRGBAToRGB(frame.data);
-    }
-    callback_(frame, ts);
-  }
-
-  publishImage(buf);
+  publishImage(m_frameCount, buf);
   m_frameCount++;
   bufferDone(buffer);
 
   return true;
 }
 
-void RgbStream::publishImage(ImageBuffer & buf)
+void RGBStreamConsumer::publishImage(uint64_t frame_id, ImageBuffer & buf)
 {
+  auto msg = std::make_unique<sensor_msgs::msg::Image>();
+
+  msg->is_bigendian = false;
+  msg->width = buf.res.width();
+  msg->height = buf.res.height();
+  msg->encoding = "bgr8";
+  msg->step = static_cast<sensor_msgs::msg::Image::_step_type>(msg->width * 3);
+  size_t size = msg->step * msg->height;
+  msg->data.resize(size);
+  memcpy(&msg->data[0], buf.data, size);
+  msg->header.frame_id = std::to_string(frame_id);
+  msg->header.stamp.sec = buf.timestamp.tv_sec;
+  msg->header.stamp.nanosec = buf.timestamp.tv_nsec;
+
+  CAM_DEBUG("Publishing image #%zu", frame_id);
+  m_publisher->publish(std::move(msg));
 }
+
 
 }  // namespace camera
 }  // namespace cyberdog

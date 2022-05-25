@@ -106,12 +106,12 @@ int ColorConvert::convertRGBAToRGB(void * out)
 
   if (m_eglCtx.eglFrame.frameType == cudaEglFrameTypePitch) {
     cudaConvertIntPackedToFloatPlanar(
-        m_eglCtx.eglFrame,
-        m_width,
-        m_height,
-        COLOR_FORMAT_RGB,           // can be COLOR_FORMAT_BGR
-        m_cudaBuf,            // cuda buffer pointer
-        m_cudaStream);            // CUDA stream
+      m_eglCtx.eglFrame,
+      m_width,
+      m_height,
+      COLOR_FORMAT_RGB,           // can be COLOR_FORMAT_BGR
+      m_cudaBuf,            // cuda buffer pointer
+      m_cudaStream);            // CUDA stream
     cudaStreamSynchronize(m_cudaStream);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {

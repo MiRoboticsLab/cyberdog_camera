@@ -68,7 +68,8 @@ bool CameraHolder::shutdown()
   return true;
 }
 
-bool CameraHolder::startStream(int width, int height,
+bool CameraHolder::startStream(
+    int width, int height,
     ImageFormat format, FrameCallback cb)
 {
   m_stream = new RgbStream(Size2D<uint32_t>(width, height), format, cb);
@@ -162,8 +163,7 @@ int StartStream(CameraHandle handle, ImageFormat format, int width, int height, 
 {
   CameraHolder * cam_holder = nullptr;
 
-  switch (format)
-  {
+  switch (format) {
     case kImageFormatBGR:
     case kImageFormatRGB:
       break;
