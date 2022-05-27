@@ -23,7 +23,7 @@ namespace camera
 {
 
 typedef void * CameraHandle;
-typedef int (* FrameCallback)(cv::Mat & frame, uint64_t timestamp);
+typedef int (* FrameCallback)(cv::Mat & frame, uint64_t timestamp, void * args);
 
 enum ImageFormat
 {
@@ -34,7 +34,8 @@ enum ImageFormat
 
 CameraHandle OpenCamera(int camera_id, int & status);
 int CloseCamera(CameraHandle);
-int StartStream(CameraHandle handle, ImageFormat format, int width, int height, FrameCallback cb);
+int StartStream(CameraHandle handle, ImageFormat format,
+  int width, int height, FrameCallback cb, void * cb_args);
 int StopStream(CameraHandle handle);
 
 }  // namespace camera

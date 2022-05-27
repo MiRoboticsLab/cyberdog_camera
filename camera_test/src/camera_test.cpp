@@ -15,7 +15,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include "camera_api/camera_api.hpp"
 
-int frame_callback(cv::Mat &frame, uint64_t ts)
+int frame_callback(cv::Mat &frame, uint64_t ts, void * args)
 {
   static int count = 0;
   RCLCPP_INFO(rclcpp::get_logger("camera_test"), "%s: ts - %llu", __FUNCTION__, ts);
@@ -54,7 +54,7 @@ int main(int argc, char * argv[])
   cam_hdl = cyberdog::camera::OpenCamera(camera_id, status);
   cyberdog::camera::StartStream(
     cam_hdl,
-    format, width, height, frame_callback);
+    format, width, height, frame_callback, NULL);
 
   sleep(300);
 

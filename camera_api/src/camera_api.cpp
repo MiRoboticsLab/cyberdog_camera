@@ -37,7 +37,8 @@ public:
 
   bool initialize(int camera_id);
   bool shutdown();
-  bool startStream(int width, int height, ImageFormat format, FrameCallback cb);
+  bool startStream(int width, int height, ImageFormat format,
+    FrameCallback cb, void * args);
   bool stopStream();
 
 private:
@@ -70,9 +71,9 @@ bool CameraHolder::shutdown()
 
 bool CameraHolder::startStream(
     int width, int height,
-    ImageFormat format, FrameCallback cb)
+    ImageFormat format, FrameCallback cb, void * args)
 {
-  m_stream = new RgbStream(Size2D<uint32_t>(width, height), format, cb);
+  m_stream = new RgbStream(Size2D<uint32_t>(width, height), format, cb, args);
   if (m_stream == NULL) {
     CAM_ERR("Failed to create stream.");
     return false;
@@ -159,7 +160,10 @@ int CloseCamera(CameraHandle handle)
   return 0;
 }
 
-int StartStream(CameraHandle handle, ImageFormat format, int width, int height, FrameCallback cb)
+int StartStream(
+  CameraHandle handle, ImageFormat format,
+  int width, int height,
+  FrameCallback cb, void * cb_args)
 {
   CameraHolder * cam_holder = nullptr;
 
@@ -169,14 +173,15 @@ int StartStream(CameraHandle handle, ImageFormat format, int width, int height, 
       break;
     default:
       CAM_ERR("Unsupported image format %d", format);
-      return false;
+      return -1;
       break;
   }
 
   if (handle != nullptr) {
     cam_holder = reinterpret_cast<CameraHolder *>(handle);
-    if (!cam_holder->startStream(width, height, format, cb)) {
+    if (!cam_holder->startStream(width, height, format, cb, cb_args)) {
       CAM_ERR("Failed to start camera stream");
+      return -1;
     }
   }
 

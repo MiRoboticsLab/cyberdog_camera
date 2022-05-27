@@ -26,10 +26,11 @@ namespace camera
 
 RgbStream::RgbStream(
     Size2D<uint32_t> size,
-    ImageFormat format, FrameCallback cb)
+    ImageFormat format, FrameCallback cb, void * cb_args)
 : StreamConsumer(size),
   format_(format),
-  callback_(cb)
+  callback_(cb),
+  cb_args_(cb_args)
 {
 }
 
@@ -133,7 +134,7 @@ bool RgbStream::processBuffer(Buffer * buffer)
     } else if (kImageFormatRGB == format_) {
       format_convert_->convertRGBAToRGB(frame.data);
     }
-    callback_(frame, ts);
+    callback_(frame, ts, cb_args_);
   }
 
   publishImage(buf);

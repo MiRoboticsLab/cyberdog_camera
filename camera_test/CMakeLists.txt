@@ -8,6 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(camera_api REQUIRED)
 find_package(camera_service REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -20,11 +21,17 @@ add_executable(camera_server
   src/camera_server.cpp
 )
 
+add_executable(stereo_camera
+  src/stereo_camera.cpp
+)
+
 ament_target_dependencies(${PROJECT_NAME} camera_api OpenCV rclcpp)
 ament_target_dependencies(camera_server camera_service rclcpp)
+ament_target_dependencies(stereo_camera sensor_msgs camera_api OpenCV rclcpp)
 
 install(TARGETS
   camera_server
+  stereo_camera
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

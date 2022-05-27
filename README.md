@@ -19,6 +19,10 @@ sudo apt-get install cuda-toolkit-10-2
 ```console
 sudo apt-get install libavformat-dev
 ```
+### 4.protocol仓
+```console
+git clone https://git.n.xiaomi.com/MiRoboticsLab/rop/bridges
+```
 
 # 测试程序
 基于相机api的相机测试程序，可以用来测试相机是否正常，亦可以作为camera api使用方式参考。
@@ -29,6 +33,31 @@ colcon build --merge-install --package-up-to camera_test
 ```
 
 ## 运行
+
+### 测试程序，用来测试相机出图是否正常
 ```console
 ./build/camera_test/camera_test cam_id width height rgb/bgr
 ```
+
+### 主摄相机服务程序，可以进行拍照录像等命令
+```console
+ros2 run camera_test camera_server
+```
+拍照命令：
+```console
+ros2 service call /camera_service protocol/srv/CameraService "{command: 1, args: ''}"
+```
+
+录像命令：
+```console
+//开始
+$ ros2 service call /camera_service protocol/srv/CameraService "{command: 2, args: ''}"
+//停止
+$ ros2 service call /camera_service protocol/srv/CameraService "{command: 3, args: ''}"
+```
+
+### 双目/RGB相机ros2程序
+```console
+ros2 run camera_test stereo_camera
+```
+运行之后，双目相机和RGB相机将通过/image_left、/image_right、/image_rgb三个topic发布图像。

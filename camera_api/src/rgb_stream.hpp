@@ -30,7 +30,7 @@ namespace camera
 class RgbStream : public StreamConsumer
 {
 public:
-  RgbStream(Size2D<uint32_t> size, ImageFormat format, FrameCallback cb);
+  RgbStream(Size2D<uint32_t> size, ImageFormat format, FrameCallback cb, void * cb_args);
   virtual ~RgbStream();
 
   virtual bool threadInitialize();
@@ -42,6 +42,7 @@ private:
 
   ImageFormat format_;
   FrameCallback callback_;
+  void *cb_args_;
   int rgba_fd_;
   ColorConvert * format_convert_;
 };
