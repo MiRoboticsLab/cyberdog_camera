@@ -29,7 +29,7 @@ git clone https://git.n.xiaomi.com/MiRoboticsLab/rop/bridges
 
 ## 编译
 ```console
-colcon build --merge-install --package-up-to camera_test
+colcon build --merge-install --packages-up-to camera_test
 ```
 
 ## 运行

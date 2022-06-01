@@ -13,6 +13,8 @@ find_package(camera_api REQUIRED)
 find_package(camera_service REQUIRED)
 find_package(OpenCV REQUIRED)
 
+link_directories(${MYSYSROOT}/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/tegra)
+
 add_executable(${PROJECT_NAME}
   src/camera_test.cpp
 )
@@ -25,11 +27,15 @@ add_executable(stereo_camera
   src/stereo_camera.cpp
 )
 
+target_link_libraries(${PROJECT_NAME} cuda)
+target_link_libraries(camera_server cuda)
+target_link_libraries(stereo_camera cuda)
 ament_target_dependencies(${PROJECT_NAME} camera_api OpenCV rclcpp)
 ament_target_dependencies(camera_server camera_service rclcpp)
 ament_target_dependencies(stereo_camera sensor_msgs camera_api OpenCV rclcpp)
 
 install(TARGETS
+  ${PROJECT_NAME}
   camera_server
   stereo_camera
   DESTINATION lib/${PROJECT_NAME})
