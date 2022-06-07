@@ -29,6 +29,7 @@ using Argus::Request;
 using Argus::OutputStream;
 using Argus::UniqueObj;
 using Argus::Size2D;
+using Argus::SensorMode;
 
 class CameraDispatcher
 {
@@ -53,6 +54,8 @@ public:
   bool isRepeating(CaptureSession * session);
   bool cancelRequests(CaptureSession * session);
   Size2D<uint32_t> getSensorSize(uint32_t deviceIndex);
+  SensorMode * findBestSensorMode(uint32_t deviceIndex, Size2D<uint32_t> size);
+  bool setSensorMode(Request * request, SensorMode * mode);
 
 private:
   CameraDispatcher();

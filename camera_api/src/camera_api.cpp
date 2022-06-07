@@ -42,9 +42,11 @@ public:
   bool stopStream();
 
 private:
+  int camera_id_;
   Argus::UniqueObj<Argus::CaptureSession> m_captureSession;
   Argus::UniqueObj<Argus::Request> m_previewRequest;
   StreamConsumer * m_stream;
+  bool streaming_;
 };
 
 bool CameraHolder::initialize(int camera_id)
@@ -53,16 +55,24 @@ bool CameraHolder::initialize(int camera_id)
     return true;
   }
 
+  camera_id_ = camera_id;
   if (!CameraDispatcher::getInstance().createSession(m_captureSession, camera_id)) {
     CAM_ERR("Failed to create CaptureSession");
     return false;
   }
+
+  streaming_ = false;
+  CameraDispatcher::getInstance().getSensorSize(camera_id);
 
   return true;
 }
 
 bool CameraHolder::shutdown()
 {
+  if (streaming_) {
+    stopStream();
+  }
+
   m_previewRequest.reset();
   m_captureSession.reset();
 
@@ -73,6 +83,11 @@ bool CameraHolder::startStream(
     int width, int height,
     ImageFormat format, FrameCallback cb, void * args)
 {
+  if (streaming_) {
+    CAM_ERR("Camera %d has been streamed on, only support one stream.", camera_id_);
+    return false;
+  }
+
   m_stream = new RgbStream(Size2D<uint32_t>(width, height), format, cb, args);
   if (m_stream == NULL) {
     CAM_ERR("Failed to create stream.");
@@ -98,6 +113,17 @@ bool CameraHolder::startStream(
     return false;
   }
 
+  SensorMode * mode = CameraDispatcher::getInstance().findBestSensorMode(
+      camera_id_, Size2D<uint32_t>(width, height));
+  if (!mode) {
+    CAM_ERR("Failed to get sensor mode.");
+    return false;
+  }
+  if (!CameraDispatcher::getInstance().setSensorMode(m_previewRequest.get(), mode)) {
+    CAM_ERR("Failed to set sensor mode %p", mode);
+    return false;
+  }
+
   CameraDispatcher::getInstance().enableOutputStream(
     m_previewRequest.get(), m_stream->getOutputStream());
 
@@ -110,11 +136,18 @@ bool CameraHolder::startStream(
     return false;
   }
 
+  streaming_ = true;
+
   return true;
 }
 
 bool CameraHolder::stopStream()
 {
+  if (!streaming_) {
+    CAM_INFO("Not in streaming, maybe already streamed off.");
+    return true;
+  }
+
   CameraDispatcher::getInstance().stopRepeat(m_captureSession.get());
   CameraDispatcher::getInstance().waitForIdle(m_captureSession.get());
   CAM_INFO("Stop repeat capture requests.\n");
@@ -125,6 +158,8 @@ bool CameraHolder::stopStream()
   m_stream->endOfStream();
   m_stream->shutdown();
   delete m_stream;
+
+  streaming_ = false;
 
   return true;
 }

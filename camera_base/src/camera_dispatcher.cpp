@@ -382,5 +382,69 @@ Size2D<uint32_t> CameraDispatcher::getSensorSize(uint32_t deviceIndex)
   return iSensorMode->getResolution();
 }
 
+SensorMode * CameraDispatcher::findBestSensorMode(uint32_t deviceIndex, Size2D<uint32_t> size)
+{
+  assert(m_cameraDevices.size() > deviceIndex);
+
+  std::vector<Argus::SensorMode *> sensorModes;
+  Argus::ICameraProperties * iCameraProperties =
+    Argus::interface_cast<Argus::ICameraProperties>(m_cameraDevices[deviceIndex]);
+  iCameraProperties->getAllSensorModes(&sensorModes);
+  if (sensorModes.size() == 0) {
+    CAM_ERR("No camera modes available");
+    return nullptr;
+  }
+
+  SensorMode *targetMode = sensorModes[0];
+  for (size_t i = 0; i < sensorModes.size(); i++) {
+    // find first mode with same resolution.
+    Argus::ISensorMode * iSensorMode =
+      Argus::interface_cast<Argus::ISensorMode>(sensorModes[i]);
+    Size2D<uint32_t> res = iSensorMode->getResolution();
+    if (res.width() == size.width() && res.height() == size.height()) {
+      targetMode = sensorModes[i];
+      CAM_INFO("Found best sensor %u mode %u with same resolution (%u/%u).",
+          deviceIndex, i, res.width(), res.height());
+      return targetMode;
+    }
+  }
+
+  for (size_t i = 0; i < sensorModes.size(); i++) {
+    // find first mode with same aspect ratio.
+    Argus::ISensorMode * iSensorMode =
+      Argus::interface_cast<Argus::ISensorMode>(sensorModes[i]);
+    Size2D<uint32_t> res = iSensorMode->getResolution();
+    if ((res.width() * size.height()) == (size.width() * res.height())) {
+      targetMode = sensorModes[i];
+      CAM_INFO("Found best sensor %u mode %u with same aspect ratio (%u/%u).",
+          deviceIndex, i, res.width(), res.height());
+      return targetMode;
+    }
+  }
+
+  CAM_INFO("best sensor mode not found, use default mode.");
+
+  return targetMode;
+}
+
+bool CameraDispatcher::setSensorMode(Request * request, SensorMode * mode)
+{
+  Argus::IRequest * iRequest = Argus::interface_cast<Argus::IRequest>(request);
+  if (!iRequest) {
+    CAM_ERR("Failed to get IRequest interface");
+    return false;
+  }
+
+  Argus::ISourceSettings * iSourceSettings =
+    Argus::interface_cast<Argus::ISourceSettings>(iRequest->getSourceSettings());
+  if (!iSourceSettings) {
+    CAM_ERR("Failed to get ISourceSettings interface");
+    return false;
+  }
+
+  iSourceSettings->setSensorMode(mode);
+  return true;
+}
+
 }  // namespace camera
 }  // namespace cyberdog

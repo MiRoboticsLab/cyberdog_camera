@@ -38,6 +38,8 @@ colcon build --merge-install --packages-up-to camera_test
 ```console
 ./build/camera_test/camera_test cam_id width height rgb/bgr
 ```
+例如，测试camera 0，640x480分辨率RGB出图的话，使用如下命令：
+./build/camera_test/camera_test 0 640 480 rgb
 
 ### 主摄相机服务程序，可以进行拍照录像等命令
 ```console
