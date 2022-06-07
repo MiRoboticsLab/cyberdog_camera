@@ -63,7 +63,7 @@ static int convertIntPackedToFloatPlanar(void *pDevPtr,
                       COLOR_FORMAT colorFormat,
                       void* cudaBuf, void* pStream)
 {
-    dim3 threadsPerBlock(32, 32);
+    dim3 threadsPerBlock(16, 16);
     dim3 blocks(width / threadsPerBlock.x, height / threadsPerBlock.y);
     cudaStream_t stream;
 

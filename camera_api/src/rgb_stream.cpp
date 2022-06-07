@@ -127,7 +127,7 @@ bool RgbStream::processBuffer(Buffer * buffer)
   buf.timestamp.tv_nsec = ts % (1000 * 1000 * 1000);
 
   if (callback_) {
-    cv::Mat frame = cv::Mat(m_size.width(), m_size.height(), CV_8UC3, cv::Scalar(0, 0, 0));
+    cv::Mat frame = cv::Mat(m_size.height(), m_size.width(), CV_8UC3, cv::Scalar(0, 0, 0));
     // convert rgba to rgb
     if (kImageFormatBGR == format_) {
       format_convert_->convertRGBAToBGR(frame.data);
