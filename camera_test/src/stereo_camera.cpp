@@ -141,10 +141,15 @@ struct {
 bool StereoCameraNode::Initialize()
 {
   for (int i = 0; i < 3; i++) {
+    int w, h;
     CameraTopic * topic = new CameraTopic(this,
         g_topics[i].camera_id, g_topics[i].name);
 
-    if (topic->Initialize(g_topics[i].width, g_topics[i].height, g_topics[i].format)) {
+    this->declare_parameter("w_" + g_topics[i].name, g_topics[i].width);
+    this->declare_parameter("h_" + g_topics[i].name, g_topics[i].height);
+    this->get_parameter("w_" + g_topics[i].name, w);
+    this->get_parameter("h_" + g_topics[i].name, h);
+    if (topic->Initialize(w, h, g_topics[i].format)) {
       topic_list_.push_back(topic);
     } else {
       delete topic;

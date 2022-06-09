@@ -1,0 +1,8 @@
+/stereo_camera:
+  ros__parameters:
+    h_left: 400
+    h_rgb: 480
+    h_right: 400
+    w_left: 640
+    w_rgb: 640
+    w_right: 640

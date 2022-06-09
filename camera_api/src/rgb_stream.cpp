@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define LOG_TAG "MonoStream"
+#define LOG_TAG "CameraStream"
 #include <string>
 #include <memory>
 #include <utility>
