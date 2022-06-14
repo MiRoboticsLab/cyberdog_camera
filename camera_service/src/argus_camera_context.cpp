@@ -34,8 +34,8 @@ namespace camera
 const uint64_t ONE_SECONDS_IN_NANOSECONDS = 1000000000;
 const int VIDEO_WIDTH_DEFAULT = 1280;
 const int VIDEO_HEIGHT_DEFAULT = 960;
-const int ALGO_WIDTH_DEFAULT = 640;
-const int ALGO_HEIGHT_DEFAULT = 480;
+const int ALGO_WIDTH_DEFAULT = 1280;
+const int ALGO_HEIGHT_DEFAULT = 960;
 const int IMAGE_WIDTH_DEFAULT = 640;
 const int IMAGE_HEIGHT_DEFAULT = 480;
 
@@ -390,24 +390,15 @@ int ArgusCameraContext::stopRecording(std::string & filename)
 
 int ArgusCameraContext::startRgbStream()
 {
-  startCameraStream(
-    STREAM_TYPE_ALGO, Size2D<uint32_t>(
-      ALGO_WIDTH_DEFAULT,
-      ALGO_HEIGHT_DEFAULT), NULL);
-  startCameraStream(
-    STREAM_TYPE_RGB, Size2D<uint32_t>(
-      IMAGE_WIDTH_DEFAULT,
-      IMAGE_HEIGHT_DEFAULT), NULL);
-
-  return CAM_SUCCESS;
+  return startCameraStream(
+      STREAM_TYPE_ALGO, Size2D<uint32_t>(
+        ALGO_WIDTH_DEFAULT,
+        ALGO_HEIGHT_DEFAULT), NULL);
 }
 
 int ArgusCameraContext::stopRgbStream()
 {
-  stopCameraStream(STREAM_TYPE_ALGO);
-  stopCameraStream(STREAM_TYPE_RGB);
-
-  return CAM_SUCCESS;
+  return  stopCameraStream(STREAM_TYPE_ALGO);
 }
 
 bool ArgusCameraContext::isRecording()
@@ -426,11 +417,23 @@ uint64_t ArgusCameraContext::getRecordingTime()
   return video_stream->getRecordingTime();
 }
 
+int ArgusCameraContext::startImagePublish()
+{
+  return startCameraStream(
+      STREAM_TYPE_RGB, Size2D<uint32_t>(
+        IMAGE_WIDTH_DEFAULT,
+        IMAGE_HEIGHT_DEFAULT), NULL);
+}
+
+int ArgusCameraContext::stopImagePublish()
+{
+  return stopCameraStream(STREAM_TYPE_RGB);
+}
+
 Size2D<uint32_t> ArgusCameraContext::getSensorSize()
 {
   return CameraDispatcher::getInstance().getSensorSize(m_cameraId);
 }
-
 
 }  // namespace camera
 }  // namespace cyberdog

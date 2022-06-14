@@ -21,7 +21,7 @@
 #include <iostream>
 
 #define IPCKEY_PATH "/"
-#define IMAGE_SIZE 640 * 480 * 3
+#define IMAGE_SIZE 1280 * 960 * 3
 
 struct SharedImage
 {
@@ -39,7 +39,7 @@ inline int CreateShm(unsigned char proj_id, size_t size, int & shm_id)
 
   shm_id = shmget(key, size, IPC_CREAT | 0666);
   if (shm_id < 0) {
-    std::cout << "Get the shared memory id fail. " << std::endl;
+    std::cout << "Get the shared memory id fail. " << errno << std::endl;
     return -1;
   }
 

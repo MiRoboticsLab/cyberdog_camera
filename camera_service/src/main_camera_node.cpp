@@ -173,6 +173,14 @@ void CameraServerNode::serviceCallback(
       response->result =
         CameraManager::getInstance()->stopPreview();
       break;
+    case CameraServiceT::Request::START_IMAGE_PUBLISH:
+      response->result =
+        CameraManager::getInstance()->startImagePublish();
+      break;
+    case CameraServiceT::Request::STOP_IMAGE_PUBLISH:
+      response->result =
+        CameraManager::getInstance()->stopImagePublish();
+      break;
     default:
       printf("service unsupport command %d\n", request->command);
       response->result = CameraServiceT::Response::RESULT_INVALID_ARGS;

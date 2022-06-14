@@ -231,5 +231,15 @@ void CameraManager::processAlgoParam()
   }
 }
 
+int CameraManager::startImagePublish()
+{
+  return m_camera->startImagePublish();
+}
+
+int CameraManager::stopImagePublish()
+{
+  return m_camera->stopImagePublish();
+}
+
 }  // namespace camera
 }  // namespace cyberdog

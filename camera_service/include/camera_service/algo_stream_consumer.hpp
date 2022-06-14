@@ -47,6 +47,8 @@ private:
   ImageBuffer getBuffer();
   void putBuffer(ImageBuffer buffer);
   void freeBuffers();
+  bool initSharedBuffer();
+  void deinitSharedBuffer();
 
   void imageBufferDone(ImageBuffer buffer);
 

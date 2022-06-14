@@ -29,12 +29,15 @@ namespace camera
 
 AlgoStreamConsumer::AlgoStreamConsumer(Size2D<uint32_t> size)
 : StreamConsumer(size)
+, shm_addr_(nullptr)
 {
+  initSharedBuffer();
 }
 
 AlgoStreamConsumer::~AlgoStreamConsumer()
 {
   freeBuffers();
+  deinitSharedBuffer();
 }
 
 ImageBuffer AlgoStreamConsumer::getBuffer()
@@ -94,21 +97,6 @@ bool AlgoStreamConsumer::threadInitialize()
 
   AlgoDispatcher::getInstance().setBufferDoneCallback(bufferDoneCallback, this);
 
-  //  add for shared memory
-  if (0 != CreateShm(SHM_PROJ_ID, sizeof(double) + IMAGE_SIZE, shm_id_)) {
-    CAM_ERR("Failed to create shared memory.");
-    return false;
-  }
-  shm_addr_ = GetShmAddr(shm_id_, sizeof(double) + IMAGE_SIZE);
-  if (shm_addr_ == nullptr) {
-    CAM_ERR("Failed to map shared memory.");
-    return false;
-  }
-  if (0 != CreateSem(SEM_PROJ_ID, 3, sem_set_id_)) {
-    CAM_ERR("Failed to create shared memory semaphore.");
-    return false;
-  }
-
   return true;
 }
 
@@ -120,9 +108,6 @@ bool AlgoStreamConsumer::threadShutdown()
   if (m_rgbaFd > 0) {
     NvBufferDestroy(m_rgbaFd);
   }
-
-  // add for shared memory
-  DetachShm(shm_addr_);
 
   AlgoDispatcher::getInstance().setAlgoEnabled(ALGO_FACE_DETECT, false);
   AlgoDispatcher::getInstance().setAlgoEnabled(ALGO_BODY_DETECT, false);
@@ -173,8 +158,10 @@ bool AlgoStreamConsumer::processBuffer(Buffer * buffer)
 
     NvBufferTransform(fd, m_rgbaFd, &transform_params);
     // m_convert->convertRGBAToBGR(buf.data);
-    m_convert->convertRGBAToBGR(shm_addr_ + sizeof(double));
-    SignalSem(sem_set_id_, 2);
+    if (shm_addr_ != nullptr) {
+      m_convert->convertRGBAToBGR(shm_addr_ + sizeof(double));
+      SignalSem(sem_set_id_, 2);
+    }
 
     AlgoDispatcher::getInstance().processImageBuffer(m_frameCount, buf);
   } else {
@@ -196,6 +183,30 @@ void AlgoStreamConsumer::imageBufferDone(ImageBuffer buffer)
   }
 
   putBuffer(buffer);
+}
+
+bool AlgoStreamConsumer::initSharedBuffer()
+{
+  if (0 != CreateShm(SHM_PROJ_ID, sizeof(double) + IMAGE_SIZE, shm_id_)) {
+    CAM_ERR("Failed to create shared memory.");
+    return false;
+  }
+  shm_addr_ = GetShmAddr(shm_id_, sizeof(double) + IMAGE_SIZE);
+  if (shm_addr_ == nullptr) {
+    CAM_ERR("Failed to map shared memory.");
+    return false;
+  }
+  if (0 != CreateSem(SEM_PROJ_ID, 3, sem_set_id_)) {
+    CAM_ERR("Failed to create shared memory semaphore.");
+    return false;
+  }
+
+  return true;
+}
+
+void AlgoStreamConsumer::deinitSharedBuffer()
+{
+  DetachShm(shm_addr_);
 }
 
 }  // namespace camera

@@ -45,6 +45,8 @@ public:
   int takePicture(std::string & filename, int width = 0, int height = 0);
   int setParameters(std::string & parameters);
   void setVisionAlgoEnabled(int algo_type, bool enable);
+  int startImagePublish();
+  int stopImagePublish();
 
   void setParent(rclcpp::Node * parent)
   {
