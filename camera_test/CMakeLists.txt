@@ -24,6 +24,8 @@ add_executable(camera_server
 )
 
 add_executable(stereo_camera
+  src/dispatcher.cpp
+  src/global_timestamp_reader.cpp
   src/stereo_camera.cpp
 )
 

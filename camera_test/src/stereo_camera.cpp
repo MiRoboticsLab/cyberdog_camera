@@ -2,11 +2,26 @@
 #include <rclcpp/executor.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include "camera_api/camera_api.hpp"
+#include "global_timestamp_reader.h"
 
 namespace cyberdog
 {
 namespace camera
 {
+
+global_time_interface globalTime;
+
+double get_frame_timestamp(double frame_time)
+{
+  auto sp = globalTime._tf_keeper;
+  bool ts_is_ready;
+  if (sp)
+      frame_time = sp->get_system_hw_time(frame_time, ts_is_ready);
+  else
+      printf("Notification: global_timestamp_reader - time_diff_keeper is being shut-down");
+
+  return frame_time;
+}
 
 class CameraTopic
 {
@@ -98,6 +113,11 @@ void CameraTopic::PublishImage(cv::Mat & frame, uint64_t timestamp)
 {
   auto msg = std::make_unique<sensor_msgs::msg::Image>();
 
+  double hw_time = timestamp*0.000001;
+  double real_ts_sys = get_frame_timestamp(hw_time)*0.001;
+  uint32_t sec = (uint32_t)real_ts_sys;
+  int32_t nsec = (real_ts_sys - sec) * 1000 * 1000 * 1000;
+
   msg->is_bigendian = false;
   msg->width = frame.cols;
   msg->height = frame.rows;
@@ -107,8 +127,8 @@ void CameraTopic::PublishImage(cv::Mat & frame, uint64_t timestamp)
   msg->data.resize(size);
   memcpy(&msg->data[0], frame.data, size);
   msg->header.frame_id = name_ + "_link";
-  msg->header.stamp.sec = timestamp / (1000 * 1000 * 1000);
-  msg->header.stamp.nanosec = timestamp % (1000 * 1000 * 1000);
+  msg->header.stamp.sec = sec;
+  msg->header.stamp.nanosec = nsec;
 
   pub_->publish(std::move(msg));
 
@@ -140,6 +160,8 @@ struct {
 
 bool StereoCameraNode::Initialize()
 {
+  globalTime.enable_time_diff_keeper(true);
+
   for (int i = 0; i < 3; i++) {
     int w, h;
     CameraTopic * topic = new CameraTopic(this,
