@@ -79,7 +79,7 @@ bool CameraTopic::Initialize(int width, int height, ImageFormat format)
 {
   int status;
 
-  cam_hdl_ = OpenCamera(camera_id_, status);
+  cam_hdl_ = OpenCamera(camera_id_, status, true);
   if (!cam_hdl_) {
     return false;
   }

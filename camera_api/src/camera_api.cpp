@@ -35,7 +35,7 @@ public:
   CameraHolder(const CameraHolder & other) = delete;
   CameraHolder(CameraHolder && other) = delete;
 
-  bool initialize(int camera_id);
+  bool initialize(int camera_id, bool sync);
   bool shutdown();
   bool startStream(int width, int height, ImageFormat format,
     FrameCallback cb, void * args);
@@ -46,10 +46,11 @@ private:
   Argus::UniqueObj<Argus::CaptureSession> m_captureSession;
   Argus::UniqueObj<Argus::Request> m_previewRequest;
   StreamConsumer * m_stream;
+  bool sync_;// hardware synchronization
   bool streaming_;
 };
 
-bool CameraHolder::initialize(int camera_id)
+bool CameraHolder::initialize(int camera_id, bool sync)
 {
   if (m_captureSession) {
     return true;
@@ -61,8 +62,8 @@ bool CameraHolder::initialize(int camera_id)
     return false;
   }
 
+  sync_ = sync;
   streaming_ = false;
-  CameraDispatcher::getInstance().getSensorSize(camera_id);
 
   return true;
 }
@@ -113,8 +114,13 @@ bool CameraHolder::startStream(
     return false;
   }
 
-  SensorMode * mode = CameraDispatcher::getInstance().findBestSensorMode(
-      camera_id_, Size2D<uint32_t>(width, height));
+  SensorMode * mode;
+  if (sync_ && camera_id_ == 1) {
+    mode = CameraDispatcher::getInstance().getSensorMode(camera_id_, 2);
+  } else {
+    mode = CameraDispatcher::getInstance().findBestSensorMode(
+              camera_id_, Size2D<uint32_t>(width, height));
+  }
   if (!mode) {
     CAM_ERR("Failed to get sensor mode.");
     return false;
@@ -164,12 +170,12 @@ bool CameraHolder::stopStream()
   return true;
 }
 
-CameraHandle OpenCamera(int camera_id, int & status)
+CameraHandle OpenCamera(int camera_id, int & status, bool sync)
 {
   CameraHandle handle = nullptr;
 
   CameraHolder * cam_holder = new CameraHolder();
-  if (!cam_holder->initialize(camera_id)) {
+  if (!cam_holder->initialize(camera_id, sync)) {
     CAM_ERR("Failed to initialize camera %d", camera_id);
     delete cam_holder;
     cam_holder = nullptr;

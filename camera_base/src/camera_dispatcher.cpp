@@ -427,6 +427,28 @@ SensorMode * CameraDispatcher::findBestSensorMode(uint32_t deviceIndex, Size2D<u
   return targetMode;
 }
 
+SensorMode * CameraDispatcher::getSensorMode(uint32_t deviceIndex, uint32_t modeIndex)
+{
+  assert(m_cameraDevices.size() > deviceIndex);
+
+  std::vector<Argus::SensorMode *> sensorModes;
+  Argus::ICameraProperties * iCameraProperties =
+    Argus::interface_cast<Argus::ICameraProperties>(m_cameraDevices[deviceIndex]);
+  iCameraProperties->getAllSensorModes(&sensorModes);
+  if (sensorModes.size() == 0) {
+    CAM_ERR("No camera modes available");
+    return nullptr;
+  }
+
+  if (modeIndex >= sensorModes.size()) {
+    CAM_INFO("Sendoe Mode %u not existed, use default mode.", modeIndex);
+    return sensorModes[0];
+  } else {
+    CAM_INFO("Sendoe Mode %u existed.", modeIndex);
+    return sensorModes[modeIndex];
+  }
+}
+
 bool CameraDispatcher::setSensorMode(Request * request, SensorMode * mode)
 {
   Argus::IRequest * iRequest = Argus::interface_cast<Argus::IRequest>(request);

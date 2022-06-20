@@ -32,7 +32,7 @@ enum ImageFormat
   kImageFormatInvalid,
 };
 
-CameraHandle OpenCamera(int camera_id, int & status);
+CameraHandle OpenCamera(int camera_id, int & status, bool sync = false);
 int CloseCamera(CameraHandle);
 int StartStream(CameraHandle handle, ImageFormat format,
   int width, int height, FrameCallback cb, void * cb_args);
