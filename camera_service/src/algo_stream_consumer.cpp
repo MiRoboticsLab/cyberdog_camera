@@ -159,7 +159,12 @@ bool AlgoStreamConsumer::processBuffer(Buffer * buffer)
     NvBufferTransform(fd, m_rgbaFd, &transform_params);
     // m_convert->convertRGBAToBGR(buf.data);
     if (shm_addr_ != nullptr) {
-      m_convert->convertRGBAToBGR(shm_addr_ + sizeof(double));
+      WaitSem(sem_set_id_, 1);
+      WaitSem(sem_set_id_, 0);
+      uint64_t time = ts.tv_sec * 1000 * 1000 * 1000 + ts.tv_nsec;
+      memcpy(shm_addr_, &time, sizeof(uint64_t));
+      m_convert->convertRGBAToBGR(shm_addr_ + sizeof(uint64_t));
+      SignalSem(sem_set_id_, 0);
       SignalSem(sem_set_id_, 2);
     }
 

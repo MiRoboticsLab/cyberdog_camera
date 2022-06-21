@@ -21,7 +21,7 @@
 #include <iostream>
 
 #define IPCKEY_PATH "/"
-#define IMAGE_SIZE 1280 * 960 * 3
+#define IMAGE_SIZE 640 * 480 * 3
 
 struct SharedImage
 {
