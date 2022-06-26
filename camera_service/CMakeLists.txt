@@ -15,6 +15,7 @@ find_package(camera_base REQUIRED)
 find_package(camera_utils REQUIRED)
 find_package(CUDA REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(image_transmission)
 
 set(ARGUS_INC_DIR ${MYSYSROOT}/usr/src/jetson_multimedia_api/argus/samples/utils
   ${MYSYSROOT}/usr/src/jetson_multimedia_api/include)
@@ -50,7 +51,17 @@ add_library(${PROJECT_NAME} SHARED
 )
 
 target_link_libraries(${PROJECT_NAME} cuda nvosd)
-ament_target_dependencies(${PROJECT_NAME} camera_base rclcpp rclcpp_action sensor_msgs protocol camera_utils CUDA OpenCV)
+ament_target_dependencies(${PROJECT_NAME}
+  camera_base
+  rclcpp
+  rclcpp_action
+  sensor_msgs
+  protocol
+  camera_utils
+  CUDA
+  OpenCV
+  image_transmission
+)
 
 install(TARGETS
   ${PROJECT_NAME}

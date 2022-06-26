@@ -23,14 +23,17 @@
 #include "camera_algo/algo_dispatcher.hpp"
 #include "camera_utils/camera_log.hpp"
 
+#define USE_SOFT_ENC 1
+
 namespace cyberdog
 {
 namespace camera
 {
 
-H264StreamConsumer::H264StreamConsumer(Size2D<uint32_t> size)
+H264StreamConsumer::H264StreamConsumer(Size2D<uint32_t> size, StreamCb callback)
 : StreamConsumer(size),
-  m_videoEncoder(NULL)
+  m_videoEncoder(NULL),
+  live_stream_cb_(callback)
 {
   auto qos = rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 10));
   qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
@@ -212,6 +215,11 @@ void H264StreamConsumer::publishImage(uint64_t frame_id, ImageBuffer & buf)
   /*if ((m_video_stream->emptyThisBuffer(data, size)) < 0) {
     CAM_ERR("%s,send buffer to video", __func__);
   }*/
+  int64_t timestamp =
+      buf.timestamp.tv_sec * 1000 * 1000  * 1000 + buf.timestamp.tv_nsec;
+  if (live_stream_cb_) {
+    live_stream_cb_(data, timestamp, frame_id);
+  }
   delete[] data;
 #endif
 }

@@ -17,6 +17,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include "camera_service/camera_manager.hpp"
 #include "camera_service/argus_camera_context.hpp"
 #include "camera_base/camera_dispatcher.hpp"
 #include "camera_service/video_stream_consumer.hpp"
@@ -38,10 +39,15 @@ const int ALGO_WIDTH_DEFAULT = 640;
 const int ALGO_HEIGHT_DEFAULT = 480;
 const int IMAGE_WIDTH_DEFAULT = 640;
 const int IMAGE_HEIGHT_DEFAULT = 480;
+const int LIVE_WIDTH_DEFAULT = 1280;
+const int LIVE_HEIGHT_DEFAULT = 960;
 
 ArgusCameraContext::ArgusCameraContext(int camId)
 : m_cameraId(camId),
-  m_isStreaming(false)
+  m_isStreaming(false),
+  liveStream_(CameraManager::getInstance()->getParent(),
+    LIVE_WIDTH_DEFAULT, LIVE_HEIGHT_DEFAULT),
+  live_stream_cb_(nullptr)
 {
   initialize();
 }
@@ -57,6 +63,11 @@ bool ArgusCameraContext::initialize()
 
   for (int i = 0; i < STREAM_TYPE_MAX; i++) {
     m_activeStreams.push_back(NULL);
+  }
+
+  live_stream_cb_ = liveStream_.Init();
+  if (!live_stream_cb_) {
+    CAM_ERR("Failed to init live stream broadcaster.");
   }
 
   return true;
@@ -255,7 +266,7 @@ int ArgusCameraContext::startCameraStream(
       stream = std::make_shared<VideoStreamConsumer>(size, *filename);
       break;
     case STREAM_TYPE_H264:
-      stream = std::make_shared<H264StreamConsumer>(size);
+      stream = std::make_shared<H264StreamConsumer>(size, live_stream_cb_);
       break;
     default:
       return CAM_INVALID_ARG;

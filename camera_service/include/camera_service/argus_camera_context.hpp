@@ -19,6 +19,7 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <image_transmission/live_stream_broadcaster.hpp>
 #include "camera_base/stream_consumer.hpp"
 
 namespace cyberdog
@@ -76,6 +77,8 @@ private:
   std::vector<std::shared_ptr<StreamConsumer>> m_activeStreams;
   std::mutex m_streamLock;
   bool m_isStreaming;
+  cyberdog::interaction::LiveStreamBroadcaster liveStream_;
+  std::function<void(uint8_t *, int64_t, uint16_t)> live_stream_cb_;
 };
 
 }  // namespace camera

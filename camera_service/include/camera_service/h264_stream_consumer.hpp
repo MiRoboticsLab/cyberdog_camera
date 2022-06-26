@@ -20,23 +20,24 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/compressed_image.hpp>
 #include <nvosd.h>
-// #include <live_stream/video_stream.hpp>
 #include <string>
 #include <memory>
 #include <vector>
 #include "camera_base/stream_consumer.hpp"
 #include "camera_base/video_encoder.hpp"
-#include "./ros2_service.hpp"
+#include "ros2_service.hpp"
 
 namespace cyberdog
 {
 namespace camera
 {
 
+using StreamCb = std::function<void(uint8_t *, int64_t, uint16_t)>;
+
 class H264StreamConsumer : public StreamConsumer
 {
 public:
-  explicit H264StreamConsumer(Size2D<uint32_t> size);
+  explicit H264StreamConsumer(Size2D<uint32_t> size, StreamCb callback = nullptr);
   virtual ~H264StreamConsumer();
 
   virtual bool threadInitialize();
@@ -70,12 +71,14 @@ private:
   void * m_nvosdContext;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_publisher;
   rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr m_h264Publisher;
-  // std::shared_ptr<live_stream::VideoStream> m_video_stream;
   timer_t m_timer;
 
   rclcpp::Subscription<BodyInfoT>::SharedPtr m_bodySub;
   std::vector<BodyT> m_currentBodyRects;
   std::mutex m_rectLock;
+
+  // for live stream
+  StreamCb live_stream_cb_;
 };
 
 }  // namespace camera

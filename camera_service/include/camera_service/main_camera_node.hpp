@@ -19,6 +19,7 @@
 #include <memory>
 #include "ros2_service.hpp"
 #include <rclcpp/rclcpp.hpp>
+#include <image_transmission/live_stream_broadcaster.hpp>
 
 namespace cyberdog
 {

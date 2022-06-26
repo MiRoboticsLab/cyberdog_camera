@@ -53,6 +53,11 @@ public:
     m_parentNode = parent;
   }
 
+  rclcpp::Node * getParent()
+  {
+      return m_parentNode;
+  }
+
   template<typename MessageT>
   std::shared_ptr<rclcpp::Publisher<MessageT>> create_publisher(
     const std::string & topic_name,
