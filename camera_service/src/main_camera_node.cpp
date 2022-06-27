@@ -61,8 +61,8 @@ CameraServerNode::CameraServerNode()
   CAM_INFO("Creating node %s.", get_name());
 
   initParameters();
-  CameraManager::getInstance()->openCamera(0);
   CameraManager::getInstance()->setParent(this);
+  CameraManager::getInstance()->openCamera(0);
 
   on_configure();
   on_activate();
