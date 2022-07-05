@@ -231,9 +231,9 @@ void CameraManager::processAlgoParam()
   }
 }
 
-int CameraManager::startImagePublish()
+int CameraManager::startImagePublish(int width, int height, int rate)
 {
-  return m_camera->startImagePublish();
+  return m_camera->startImagePublish(width, height, rate);
 }
 
 int CameraManager::stopImagePublish()

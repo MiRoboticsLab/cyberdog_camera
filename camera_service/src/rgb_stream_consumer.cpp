@@ -25,14 +25,16 @@ namespace cyberdog
 namespace camera
 {
 
-RGBStreamConsumer::RGBStreamConsumer(Size2D<uint32_t> size)
+RGBStreamConsumer::RGBStreamConsumer(Size2D<uint32_t> size, int publish_rate)
 : StreamConsumer(size),
-  m_buffer(NULL)
+  m_buffer(NULL),
+  publish_rate_(publish_rate)
 {
   auto qos = rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 10));
   qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
   m_publisher =
     CameraManager::getInstance()->create_publisher<sensor_msgs::msg::Image>("image", qos);
+  CAM_INFO("publish rate = %d", publish_rate_);
 }
 
 RGBStreamConsumer::~RGBStreamConsumer()
@@ -90,6 +92,8 @@ bool RGBStreamConsumer::threadShutdown()
 bool RGBStreamConsumer::processBuffer(Buffer * buffer)
 {
   struct timespec ts;
+  int pub_mask = (publish_rate_ > 0 && publish_rate_ <= 30) ?
+      (30 / publish_rate_) : 1;
 
   clock_gettime(CLOCK_REALTIME, &ts);
   if (!buffer) {
@@ -104,37 +108,40 @@ bool RGBStreamConsumer::processBuffer(Buffer * buffer)
   DmaBuffer * dma_buf = DmaBuffer::fromArgusBuffer(buffer);
   int fd = dma_buf->getFd();
 
-  // Transform yuv to rgba
-  NvBufferTransformParams transform_params;
-  NvBufferRect src_rect, dest_rect;
-  memset(&transform_params, 0, sizeof(transform_params));
+  if (m_frameCount % pub_mask == 0) {
+    // Transform yuv to rgba
+    NvBufferTransformParams transform_params;
+    NvBufferRect src_rect, dest_rect;
+    memset(&transform_params, 0, sizeof(transform_params));
 
-  src_rect.top = 0;
-  src_rect.left = 0;
-  src_rect.width = m_size.width();
-  src_rect.height = m_size.height();
-  dest_rect.top = 0;
-  dest_rect.left = 0;
-  dest_rect.width = m_size.width();
-  dest_rect.height = m_size.height();
-  transform_params.transform_flag = NVBUFFER_TRANSFORM_FILTER;
-  transform_params.transform_flip = NvBufferTransform_None;
-  transform_params.transform_filter = NvBufferTransform_Filter_Nicest;
-  transform_params.src_rect = src_rect;
-  transform_params.dst_rect = dest_rect;
+    src_rect.top = 0;
+    src_rect.left = 0;
+    src_rect.width = m_size.width();
+    src_rect.height = m_size.height();
+    dest_rect.top = 0;
+    dest_rect.left = 0;
+    dest_rect.width = m_size.width();
+    dest_rect.height = m_size.height();
+    transform_params.transform_flag = NVBUFFER_TRANSFORM_FILTER;
+    transform_params.transform_flip = NvBufferTransform_None;
+    transform_params.transform_filter = NvBufferTransform_Filter_Nicest;
+    transform_params.src_rect = src_rect;
+    transform_params.dst_rect = dest_rect;
 
-  NvBufferTransform(fd, m_rgbaFd, &transform_params);
+    NvBufferTransform(fd, m_rgbaFd, &transform_params);
 
-  // convert rgba to rgb
-  m_convert->convertRGBAToBGR(m_buffer);
+    // convert rgba to rgb
+    m_convert->convertRGBAToBGR(m_buffer);
 
-  ImageBuffer buf;
-  memset(&buf, 0, sizeof(buf));
-  buf.res = m_size;
-  buf.data = m_buffer;
-  buf.timestamp = ts;
+    ImageBuffer buf;
+    memset(&buf, 0, sizeof(buf));
+    buf.res = m_size;
+    buf.data = m_buffer;
+    buf.timestamp = ts;
 
-  publishImage(m_frameCount, buf);
+    publishImage(m_frameCount, buf);
+  }
+
   m_frameCount++;
   bufferDone(buffer);
 

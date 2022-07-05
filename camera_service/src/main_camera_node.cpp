@@ -141,6 +141,7 @@ void CameraServerNode::serviceCallback(
   CAM_INFO(
     "service received command %s, argument %s\n",
     get_cmd_string(request->command), request->args.c_str());
+  CAM_INFO("width = %u, height = %u, fps = %u", request->width, request->height, request->fps);
 
   switch (request->command) {
     case CameraServiceT::Request::SET_PARAMETERS:
@@ -175,7 +176,8 @@ void CameraServerNode::serviceCallback(
       break;
     case CameraServiceT::Request::START_IMAGE_PUBLISH:
       response->result =
-        CameraManager::getInstance()->startImagePublish();
+        CameraManager::getInstance()->startImagePublish(
+          request->width, request->height, request->fps);
       break;
     case CameraServiceT::Request::STOP_IMAGE_PUBLISH:
       response->result =

@@ -28,7 +28,7 @@ namespace camera
 class RGBStreamConsumer : public StreamConsumer
 {
 public:
-  explicit RGBStreamConsumer(Size2D<uint32_t> size);
+  explicit RGBStreamConsumer(Size2D<uint32_t> size, int publish_rate);
   virtual ~RGBStreamConsumer();
 
   virtual bool threadInitialize();
@@ -41,6 +41,7 @@ private:
   unsigned char * m_buffer;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_publisher;
 
+  int publish_rate_;
   void publishImage(uint64_t frame_id, ImageBuffer & buf);
 };
 

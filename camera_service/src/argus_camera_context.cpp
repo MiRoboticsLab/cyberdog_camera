@@ -228,6 +228,11 @@ int ArgusCameraContext::startCameraStream(
   std::string * filename;
   std::shared_ptr<StreamConsumer> stream;
 
+  if (size.width() == 0 || size.height() == 0) {
+    CAM_ERR("Stream size required is illegal - (%u:%u)", size.width(), size.height());
+    return CAM_INVALID_ARG;
+  }
+
   if (m_activeStreams[type]) {
     return CAM_INVALID_STATE;
   }
@@ -258,7 +263,11 @@ int ArgusCameraContext::startCameraStream(
       stream = std::make_shared<AlgoStreamConsumer>(size);
       break;
     case STREAM_TYPE_RGB:
-      stream = std::make_shared<RGBStreamConsumer>(size);
+      if (args != NULL) {
+        stream = std::make_shared<RGBStreamConsumer>(size, *((int *)args));
+      } else {
+        stream = std::make_shared<RGBStreamConsumer>(size, 0);
+      }
       break;
     case STREAM_TYPE_VIDEO:
       filename = static_cast<std::string *>(args);
@@ -428,12 +437,12 @@ uint64_t ArgusCameraContext::getRecordingTime()
   return video_stream->getRecordingTime();
 }
 
-int ArgusCameraContext::startImagePublish()
+int ArgusCameraContext::startImagePublish(int width, int height, int rate)
 {
   return startCameraStream(
       STREAM_TYPE_RGB, Size2D<uint32_t>(
-        IMAGE_WIDTH_DEFAULT,
-        IMAGE_HEIGHT_DEFAULT), NULL);
+        width,
+        height), &rate);
 }
 
 int ArgusCameraContext::stopImagePublish()

@@ -57,7 +57,7 @@ public:
   int stopRgbStream();
   bool isRecording();
   uint64_t getRecordingTime();
-  int startImagePublish();
+  int startImagePublish(int width, int height, int rate);
   int stopImagePublish();
 
   Size2D<uint32_t> getSensorSize();
