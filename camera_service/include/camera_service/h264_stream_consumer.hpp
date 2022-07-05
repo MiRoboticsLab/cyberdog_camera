@@ -78,6 +78,7 @@ private:
   std::mutex m_rectLock;
 
   // for live stream
+  int i420_fd_;
   StreamCb live_stream_cb_;
 };
 

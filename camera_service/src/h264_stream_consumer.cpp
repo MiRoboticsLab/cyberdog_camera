@@ -91,6 +91,20 @@ bool H264StreamConsumer::threadInitialize()
   m_videoEncoder->initialize(settings);
   startSoundTimer();
 
+  NvBufferCreateParams input_params;
+  input_params.width = m_size.width();
+  input_params.height = m_size.height();
+  input_params.payloadType = NvBufferPayload_SurfArray;
+  input_params.nvbuf_tag = NvBufferTag_NONE;
+  input_params.layout = NvBufferLayout_Pitch;
+  input_params.colorFormat = NvBufferColorFormat_YUV420;
+
+  if (NvBufferCreateEx(&i420_fd_, &input_params) < 0) {
+    CAM_INFO("Failed to create NvBuffer.");
+    return false;
+  }
+
+
 #ifdef USE_SOFT_ENC
   //m_video_stream->startWork();
 #endif
@@ -112,6 +126,11 @@ bool H264StreamConsumer::threadShutdown()
 
   delete m_videoEncoder;
   m_videoEncoder = NULL;
+
+  if (i420_fd_ > 0) {
+    NvBufferDestroy(i420_fd_);
+  }
+
 
 #ifndef USE_SOFT_ENC
   //m_video_stream->reset();
@@ -139,6 +158,24 @@ bool H264StreamConsumer::processBuffer(Buffer * buffer)
   if (m_videoEncoder) {
     m_videoEncoder->encodeFromFd(fd);
   }
+
+  NvBufferTransformParams transform_params;
+  NvBufferRect src_rect, dest_rect;
+  memset(&transform_params, 0, sizeof(transform_params));
+
+  src_rect.top = 0;
+  src_rect.left = 0;
+  src_rect.width = m_size.width();
+  src_rect.height = m_size.height();
+  dest_rect.top = 0;
+  dest_rect.left = 0;
+  dest_rect.width = m_size.width();
+  dest_rect.height = m_size.height();
+  transform_params.transform_flag = NVBUFFER_TRANSFORM_FILTER;
+  transform_params.transform_flip = NvBufferTransform_None;
+  transform_params.transform_filter = NvBufferTransform_Filter_Nicest;
+  transform_params.src_rect = src_rect;
+  transform_params.dst_rect = dest_rect;
 
 #ifdef USE_SOFT_ENC
   ImageBuffer buf;
@@ -200,21 +237,19 @@ void H264StreamConsumer::outputDoneCallback(uint8_t * data, size_t size, int64_t
 
 void H264StreamConsumer::publishImage(uint64_t frame_id, ImageBuffer & buf)
 {
-  (void)frame_id;
-  (void)buf;
 #ifdef USE_SOFT_ENC
   int height = buf.res.height();
   int width = buf.res.width();
   int64_t size = height * width * 3 / 2;
   uint8_t * data = new uint8_t[size];
   memset(data, 0, size * sizeof(uint8_t));
-  NvBuffer2Raw(buf.fd, 0, width, height, &data[0]);
+  NvBuffer2Raw(i420_fd_, 0, width, height, &data[0]);
   NvBuffer2Raw(
-    buf.fd, 1, width / 2, height / 2,
+    i420_fd_, 1, width / 2, height / 2,
     &data[width * height]);
-  /*if ((m_video_stream->emptyThisBuffer(data, size)) < 0) {
-    CAM_ERR("%s,send buffer to video", __func__);
-  }*/
+  NvBuffer2Raw(
+    i420_fd_, 2, width / 2, height / 2,
+    &data[width * height + width * height / 4]);
   int64_t timestamp =
       buf.timestamp.tv_sec * 1000 * 1000  * 1000 + buf.timestamp.tv_nsec;
   if (live_stream_cb_) {
@@ -233,11 +268,6 @@ void H264StreamConsumer::publishH264Image(uint8_t * data, size_t size, int64_t t
   msg->data.resize(size);
   memcpy(&msg->data[0], data, size);
 
-#ifndef USE_SOFT_ENC
-  /*if ((m_video_stream->emptyThisBuffer(data, size, timestamp)) < 0) {
-    CAM_ERR("%s,send buffer to video ", __func__);
-  }*/
-#endif
   m_h264Publisher->publish(std::move(msg));
 }
 
