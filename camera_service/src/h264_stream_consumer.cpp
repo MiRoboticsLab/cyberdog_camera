@@ -177,6 +177,8 @@ bool H264StreamConsumer::processBuffer(Buffer * buffer)
   transform_params.src_rect = src_rect;
   transform_params.dst_rect = dest_rect;
 
+  NvBufferTransform(fd, i420_fd_, &transform_params);
+
 #ifdef USE_SOFT_ENC
   ImageBuffer buf;
   memset(&buf, 0, sizeof(buf));
