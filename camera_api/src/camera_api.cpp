@@ -114,9 +114,20 @@ bool CameraHolder::startStream(
     return false;
   }
 
-  SensorMode * mode;
-  if (sync_ && camera_id_ == 1) {
-    mode = CameraDispatcher::getInstance().getSensorMode(camera_id_, 2);
+  SensorMode * mode = nullptr;
+  if (sync_) {
+    switch (camera_id_) {
+      case 1:
+        mode = CameraDispatcher::getInstance().getSensorMode(camera_id_, 2);
+        break;
+      case 2:
+      case 3:
+        mode = CameraDispatcher::getInstance().getSensorMode(camera_id_, 0);
+        break;
+      default:
+        CAM_ERR("Camera %d is not support sync mode.", camera_id_);
+        break;
+    }
   } else {
     mode = CameraDispatcher::getInstance().findBestSensorMode(
               camera_id_, Size2D<uint32_t>(width, height));
