@@ -12,7 +12,8 @@ find_package(sensor_msgs REQUIRED)
 find_package(camera_api REQUIRED)
 find_package(camera_service REQUIRED)
 find_package(OpenCV REQUIRED)
-
+find_package(protocol REQUIRED)
+find_package(image_transmission)
 link_directories(${MYSYSROOT}/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/tegra)
 
 add_executable(${PROJECT_NAME}
@@ -32,9 +33,9 @@ add_executable(stereo_camera
 target_link_libraries(${PROJECT_NAME} cuda)
 target_link_libraries(camera_server cuda)
 target_link_libraries(stereo_camera cuda)
-ament_target_dependencies(${PROJECT_NAME} camera_api OpenCV rclcpp)
-ament_target_dependencies(camera_server camera_service rclcpp)
-ament_target_dependencies(stereo_camera sensor_msgs camera_api OpenCV rclcpp)
+ament_target_dependencies(${PROJECT_NAME} camera_api OpenCV rclcpp protocol image_transmission)
+ament_target_dependencies(camera_server camera_service rclcpp protocol image_transmission)
+ament_target_dependencies(stereo_camera sensor_msgs camera_api OpenCV protocol rclcpp image_transmission)
 
 install(TARGETS
   ${PROJECT_NAME}
