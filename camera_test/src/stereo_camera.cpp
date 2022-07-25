@@ -3,6 +3,7 @@
 #include <sensor_msgs/msg/image.hpp>
 #include "camera_api/camera_api.hpp"
 #include "global_timestamp_reader.h"
+#include "cyberdog_visions_interfaces/msg/metadata.hpp"
 
 namespace cyberdog
 {
@@ -40,7 +41,7 @@ class CameraTopic
     std::string name_;
     rclcpp::Node *parent_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_;
-    rclcpp::Publisher<realsense2_camera_msgs::msg::Metadata>::SharedPtr pub_metadata;
+    rclcpp::Publisher<cyberdog_visions_interfaces::msg::Metadata>::SharedPtr pub_metadata;
 
     CameraHandle cam_hdl_;
     int camera_id_;
@@ -73,7 +74,7 @@ CameraTopic::CameraTopic(rclcpp::Node * parent, int camera_id, const std::string
   pub_ = parent_->create_publisher<sensor_msgs::msg::Image>("image_" + name, qos);
   if(name_ == "left")
   {
-    pub_metadata = node->create_publisher<realsense2_camera_msgs::msg::Metadata>("image_" + m_name+"_metadata", qos);
+    pub_metadata = parent_->create_publisher<cyberdog_visions_interfaces::msg::Metadata>("image_" + name_+"_metadata", qos);
   }
 }
 
@@ -146,16 +147,14 @@ void CameraTopic::PublishImage(cv::Mat & frame, uint64_t timestamp)
 
 }
 
-void StereoCameraNode::publishMetadata(uint64_t t_real_sys, uint64_t t_hw)
+void CameraTopic::publishMetadata(uint64_t t_real_sys, uint64_t t_hw)
 {  
-  realsense2_camera_msgs::msg::Metadata msg;
-  msg.header.frame_id = m_name + "_link";
+  cyberdog_visions_interfaces::msg::Metadata msg;
+  msg.header.frame_id = name_ + "_link";
   msg.header.stamp = rclcpp::Time(t_real_sys);
   std::stringstream json_data;
   const char* separator = ",";
   json_data << "{";
-  // Add additional fields:
-  // json_data << "\"" << "frame_number" << "\":" << frame_number;
   json_data << separator << "\"" << "frame_timestamp" << "\":" << std::fixed << t_real_sys;
   json_data << separator << "\"" << "frame_hw" << "\":" << std::fixed << t_hw;
   //json_data << separator << "\"" << "frame_exposure" << "\":" << std::fixed << t_exposure;

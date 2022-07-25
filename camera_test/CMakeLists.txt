@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(camera_api REQUIRED)
 find_package(camera_service REQUIRED)
+find_package(cyberdog_visions_interfaces REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(protocol REQUIRED)
 find_package(image_transmission)
@@ -35,7 +36,7 @@ target_link_libraries(camera_server cuda)
 target_link_libraries(stereo_camera cuda)
 ament_target_dependencies(${PROJECT_NAME} camera_api OpenCV rclcpp protocol image_transmission)
 ament_target_dependencies(camera_server camera_service rclcpp protocol image_transmission)
-ament_target_dependencies(stereo_camera sensor_msgs camera_api OpenCV protocol rclcpp image_transmission)
+ament_target_dependencies(stereo_camera sensor_msgs camera_api OpenCV protocol rclcpp image_transmission cyberdog_visions_interfaces)
 
 install(TARGETS
   ${PROJECT_NAME}
