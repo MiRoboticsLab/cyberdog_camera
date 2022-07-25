@@ -183,8 +183,8 @@ struct {
 } g_topics[3] = 
 {
   {1, 640, 480, kImageFormatBGR, "rgb"},
-  {2, 640, 400, kImageFormatBGR, "left"},
-  {3, 640, 400, kImageFormatBGR, "right"}
+  {2, 640, 400, kImageFormatBGR, "right"},
+  {3, 640, 400, kImageFormatBGR, "left"}
 };
 
 bool StereoCameraNode::Initialize()
