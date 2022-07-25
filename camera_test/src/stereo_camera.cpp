@@ -3,6 +3,7 @@
 #include <sensor_msgs/msg/image.hpp>
 #include "camera_api/camera_api.hpp"
 #include "global_timestamp_reader.h"
+#include "cyberdog_visions_interfaces/msg/metadata.hpp"
 
 namespace cyberdog
 {
@@ -35,10 +36,12 @@ class CameraTopic
   private: 
     static int sFrameCallback(cv::Mat & frame, uint64_t timestamp, void * arg);
     void PublishImage(cv::Mat & frame, uint64_t timestamp);
+    void publishMetadata(uint64_t t_real_sys, uint64_t t_hw);
 
     std::string name_;
     rclcpp::Node *parent_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_;
+    rclcpp::Publisher<cyberdog_visions_interfaces::msg::Metadata>::SharedPtr pub_metadata;
 
     CameraHandle cam_hdl_;
     int camera_id_;
@@ -69,6 +72,10 @@ CameraTopic::CameraTopic(rclcpp::Node * parent, int camera_id, const std::string
   auto qos = rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 10));
   qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
   pub_ = parent_->create_publisher<sensor_msgs::msg::Image>("image_" + name, qos);
+  if(name_ == "left")
+  {
+    pub_metadata = parent_->create_publisher<cyberdog_visions_interfaces::msg::Metadata>("image_" + name_+"_metadata", qos);
+  }
 }
 
 CameraTopic::~CameraTopic()
@@ -132,6 +139,28 @@ void CameraTopic::PublishImage(cv::Mat & frame, uint64_t timestamp)
 
   pub_->publish(std::move(msg));
 
+  if(name_ == "left")
+  {
+    uint64_t real_ts_sys_nano = real_ts_sys*1000000000;
+    publishMetadata(real_ts_sys_nano,timestamp);
+  }
+
+}
+
+void CameraTopic::publishMetadata(uint64_t t_real_sys, uint64_t t_hw)
+{  
+  cyberdog_visions_interfaces::msg::Metadata msg;
+  msg.header.frame_id = name_ + "_link";
+  msg.header.stamp = rclcpp::Time(t_real_sys);
+  std::stringstream json_data;
+  const char* separator = ",";
+  json_data << "{";
+  json_data << separator << "\"" << "frame_timestamp" << "\":" << std::fixed << t_real_sys;
+  json_data << separator << "\"" << "frame_hw" << "\":" << std::fixed << t_hw;
+  //json_data << separator << "\"" << "frame_exposure" << "\":" << std::fixed << t_exposure;
+  json_data << "}";
+  msg.json_data = json_data.str();
+  pub_metadata->publish(msg);
 }
 
 StereoCameraNode::StereoCameraNode(const std::string & name)
