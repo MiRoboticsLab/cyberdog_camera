@@ -60,6 +60,7 @@ public:
   bool Shutdown();
 
 private:
+  void InitParameters();
   std::vector<CameraTopic *> topic_list_;
 };
 
@@ -86,6 +87,7 @@ bool CameraTopic::Initialize(int width, int height, ImageFormat format)
 {
   int status;
 
+  format_ = format;
   cam_hdl_ = OpenCamera(camera_id_, status, true);
   if (!cam_hdl_) {
     return false;
@@ -124,10 +126,22 @@ void CameraTopic::PublishImage(cv::Mat & frame, uint64_t timestamp,uint32_t fram
   double real_ts_sys = get_frame_timestamp(hw_time)*0.001;
   uint64_t real_ts_sys_nano = real_ts_sys*1000000000;
 
+  switch (format_) {
+    case kImageFormatBGR:
+      msg->encoding = "bgr8";
+      break;
+    case kImageFormatRGB:
+      msg->encoding = "rgb8";
+      break;
+    case kImageFormatGRAY:
+      msg->encoding = "mono8";
+      break;
+    default:
+      break;
+  }
   msg->is_bigendian = false;
   msg->width = frame.cols;
   msg->height = frame.rows;
-  msg->encoding = "bgr8";
   msg->step = frame.step;
   size_t size = msg->step * msg->height;
   msg->data.resize(size);
@@ -175,7 +189,7 @@ struct {
   int height;
   ImageFormat format;
   std::string name;
-} g_topics[3] = 
+} g_topics[3] =
 {
   {1, 640, 480, kImageFormatBGR, "rgb"},
   {2, 640, 400, kImageFormatBGR, "right"},
@@ -186,16 +200,16 @@ bool StereoCameraNode::Initialize()
 {
   globalTime.enable_time_diff_keeper(true);
 
-  for (int i = 0; i < 3; i++) {
-    int w, h;
+  InitParameters();
+  for (size_t i = 0; i < sizeof(g_topics) / sizeof(g_topics[0]); i++) {
+    int w, h, format;
     CameraTopic * topic = new CameraTopic(this,
         g_topics[i].camera_id, g_topics[i].name);
 
-    this->declare_parameter("w_" + g_topics[i].name, g_topics[i].width);
-    this->declare_parameter("h_" + g_topics[i].name, g_topics[i].height);
     this->get_parameter("w_" + g_topics[i].name, w);
     this->get_parameter("h_" + g_topics[i].name, h);
-    if (topic->Initialize(w, h, g_topics[i].format)) {
+    this->get_parameter("format_" + g_topics[i].name, format);
+    if (topic->Initialize(w, h, (ImageFormat)format)) {
       topic_list_.push_back(topic);
     } else {
       delete topic;
@@ -212,6 +226,15 @@ bool StereoCameraNode::Shutdown()
     delete topic_list_[i];
   }
   return true;
+}
+
+void StereoCameraNode::InitParameters()
+{
+  for (size_t i = 0; i < sizeof(g_topics) / sizeof(g_topics[0]); i++) {
+    this->declare_parameter("w_" + g_topics[i].name, g_topics[i].width);
+    this->declare_parameter("h_" + g_topics[i].name, g_topics[i].height);
+    this->declare_parameter("format_" + g_topics[i].name, (int)g_topics[i].format);
+  }
 }
 
 }  // namespace camera

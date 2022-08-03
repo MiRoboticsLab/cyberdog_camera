@@ -45,6 +45,8 @@ int main(int argc, char * argv[])
     format =  cyberdog::camera::kImageFormatBGR;
   } else if (strcmp(argv[4], "rgb") == 0) {
     format =  cyberdog::camera::kImageFormatRGB;
+  } else if (strcmp(argv[4], "gray") == 0) {
+    format =  cyberdog::camera::kImageFormatGRAY;
   } else {
     printf("image format %s unsupported!\n", argv[4]);
     return 0;

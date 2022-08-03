@@ -17,6 +17,7 @@
 #include "camera_base/camera_dispatcher.hpp"
 #include "camera_base/stream_consumer.hpp"
 #include "rgb_stream.hpp"
+#include "mono_stream.hpp"
 
 namespace cyberdog
 {
@@ -89,7 +90,18 @@ bool CameraHolder::startStream(
     return false;
   }
 
-  m_stream = new RgbStream(Size2D<uint32_t>(width, height), format, cb, args);
+  switch (format) {
+    case kImageFormatBGR:
+    case kImageFormatRGB:
+      m_stream = new RgbStream(Size2D<uint32_t>(width, height), format, cb, args);
+      break;
+    case kImageFormatGRAY:
+      m_stream = new MonoStream(Size2D<uint32_t>(width, height), format, cb, args);
+      break;
+    default:
+      CAM_ERR("Unsupported image format %d", format);
+      return false;
+  }
   if (m_stream == NULL) {
     CAM_ERR("Failed to create stream.");
     return false;
@@ -222,6 +234,7 @@ int StartStream(
   switch (format) {
     case kImageFormatBGR:
     case kImageFormatRGB:
+    case kImageFormatGRAY:
       break;
     default:
       CAM_ERR("Unsupported image format %d", format);

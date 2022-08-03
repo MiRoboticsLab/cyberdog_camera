@@ -29,6 +29,7 @@ enum ImageFormat
 {
   kImageFormatBGR = 0,
   kImageFormatRGB,
+  kImageFormatGRAY,
   kImageFormatInvalid,
 };
 

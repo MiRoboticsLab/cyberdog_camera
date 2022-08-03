@@ -27,6 +27,7 @@ add_compile_options(-Wno-pedantic
 
 add_library(${PROJECT_NAME} SHARED
   src/rgb_stream.cpp
+  src/mono_stream.cpp
   src/camera_api.cpp
 )
 
