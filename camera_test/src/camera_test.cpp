@@ -15,7 +15,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include "camera_api/camera_api.hpp"
 
-int frame_callback(cv::Mat &frame, uint64_t ts, void * args)
+int frame_callback(cv::Mat &frame, uint64_t ts,uint32_t frame_number, void * args)
 {
   static int count = 0;
   RCLCPP_INFO(rclcpp::get_logger("camera_test"), "%s: ts - %llu", __FUNCTION__, ts);
