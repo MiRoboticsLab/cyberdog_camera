@@ -87,12 +87,16 @@ bool RgbStream::processBuffer(Buffer * buffer)
   }
 
   uint64_t ts = 0;
+  uint32_t capture_id = 0;
   IBuffer * iBuffer = Argus::interface_cast<IBuffer>(buffer);
   const Argus::CaptureMetadata * metadata = iBuffer->getMetadata();
   const Argus::ICaptureMetadata * iMetadata = Argus::interface_cast<const Argus::ICaptureMetadata>(
     metadata);
   if (iMetadata) {
     ts = iMetadata->getSensorTimestamp();
+    capture_id = iMetadata->getCaptureId();
+
+
   }
 
   DmaBuffer * dma_buf = DmaBuffer::fromArgusBuffer(buffer);
@@ -134,7 +138,7 @@ bool RgbStream::processBuffer(Buffer * buffer)
     } else if (kImageFormatRGB == format_) {
       format_convert_->convertRGBAToRGB(frame.data);
     }
-    callback_(frame, ts, cb_args_);
+    callback_(frame, ts,capture_id, cb_args_);
   }
 
   publishImage(buf);

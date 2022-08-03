@@ -34,9 +34,9 @@ class CameraTopic
     bool Destroy();
 
   private: 
-    static int sFrameCallback(cv::Mat & frame, uint64_t timestamp, void * arg);
-    void PublishImage(cv::Mat & frame, uint64_t timestamp);
-    void publishMetadata(uint64_t t_real_sys, uint64_t t_hw);
+    static int sFrameCallback(cv::Mat & frame, uint64_t timestamp,uint32_t capture_id, void * arg);
+    void PublishImage(cv::Mat & frame, uint64_t timestamp,uint32_t frame_number);
+    void publishMetadata(uint64_t t_real_sys, uint64_t t_hw,uint32_t frame_number);
 
     std::string name_;
     rclcpp::Node *parent_;
@@ -107,23 +107,22 @@ bool CameraTopic::Destroy()
   return true;
 }
 
-int CameraTopic::sFrameCallback(cv::Mat & frame, uint64_t timestamp, void * arg)
+int CameraTopic::sFrameCallback(cv::Mat & frame, uint64_t timestamp, uint32_t capture_id,void * arg)
 {
   CameraTopic *_this = reinterpret_cast<CameraTopic *>(arg);
 
-  _this->PublishImage(frame, timestamp);
-
+  _this->PublishImage(frame, timestamp,capture_id);
+  
   return 0;
 }
 
-void CameraTopic::PublishImage(cv::Mat & frame, uint64_t timestamp)
+void CameraTopic::PublishImage(cv::Mat & frame, uint64_t timestamp,uint32_t frame_number)
 {
   auto msg = std::make_unique<sensor_msgs::msg::Image>();
 
   double hw_time = timestamp*0.000001;
   double real_ts_sys = get_frame_timestamp(hw_time)*0.001;
-  uint32_t sec = (uint32_t)real_ts_sys;
-  int32_t nsec = (real_ts_sys - sec) * 1000 * 1000 * 1000;
+  uint64_t real_ts_sys_nano = real_ts_sys*1000000000;
 
   msg->is_bigendian = false;
   msg->width = frame.cols;
@@ -134,20 +133,16 @@ void CameraTopic::PublishImage(cv::Mat & frame, uint64_t timestamp)
   msg->data.resize(size);
   memcpy(&msg->data[0], frame.data, size);
   msg->header.frame_id = name_ + "_link";
-  msg->header.stamp.sec = sec;
-  msg->header.stamp.nanosec = nsec;
-
+  msg->header.stamp = rclcpp::Time(real_ts_sys_nano);
   pub_->publish(std::move(msg));
-
   if(name_ == "left")
   {
-    uint64_t real_ts_sys_nano = real_ts_sys*1000000000;
-    publishMetadata(real_ts_sys_nano,timestamp);
+    publishMetadata(real_ts_sys_nano,timestamp,frame_number);
   }
 
 }
 
-void CameraTopic::publishMetadata(uint64_t t_real_sys, uint64_t t_hw)
+void CameraTopic::publishMetadata(uint64_t t_real_sys, uint64_t t_hw, uint32_t frame_number)
 {  
   cyberdog_visions_interfaces::msg::Metadata msg;
   msg.header.frame_id = name_ + "_link";
@@ -155,9 +150,9 @@ void CameraTopic::publishMetadata(uint64_t t_real_sys, uint64_t t_hw)
   std::stringstream json_data;
   const char* separator = ",";
   json_data << "{";
+  json_data << "\"" << "frame_number" << "\":" << frame_number;
   json_data << separator << "\"" << "frame_timestamp" << "\":" << std::fixed << t_real_sys;
   json_data << separator << "\"" << "frame_hw" << "\":" << std::fixed << t_hw;
-  //json_data << separator << "\"" << "frame_exposure" << "\":" << std::fixed << t_exposure;
   json_data << "}";
   msg.json_data = json_data.str();
   pub_metadata->publish(msg);
