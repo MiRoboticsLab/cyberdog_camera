@@ -183,32 +183,53 @@ StereoCameraNode::~StereoCameraNode()
   Shutdown();
 }
 
-struct {
+struct topic_info {
   int camera_id;
   int width;
   int height;
   ImageFormat format;
   std::string name;
-} g_topics[3] =
+};
+
+topic_info g_all_topics[] =
 {
   {1, 640, 480, kImageFormatBGR, "rgb"},
   {2, 640, 400, kImageFormatBGR, "right"},
   {3, 640, 400, kImageFormatBGR, "left"}
 };
 
+topic_info g_stereo_topics[] =
+{
+  {2, 640, 400, kImageFormatBGR, "right"},
+  {3, 640, 400, kImageFormatBGR, "left"}
+};
+
 bool StereoCameraNode::Initialize()
 {
+  bool stereo_only;
   globalTime.enable_time_diff_keeper(true);
 
   InitParameters();
-  for (size_t i = 0; i < sizeof(g_topics) / sizeof(g_topics[0]); i++) {
+
+  topic_info *topics;
+  size_t count = 0;
+  this->get_parameter_or("stereo_only", stereo_only, false);
+  if (stereo_only) {
+    topics = g_stereo_topics;
+    count = sizeof(g_stereo_topics) / sizeof(g_stereo_topics[0]);
+  } else {
+    topics = g_all_topics;
+    count = sizeof(g_all_topics) / sizeof(g_all_topics[0]);
+  }
+
+  for (size_t i = 0; i < count; i++) {
     int w, h, format;
     CameraTopic * topic = new CameraTopic(this,
-        g_topics[i].camera_id, g_topics[i].name);
+        topics[i].camera_id, topics[i].name);
 
-    this->get_parameter("w_" + g_topics[i].name, w);
-    this->get_parameter("h_" + g_topics[i].name, h);
-    this->get_parameter("format_" + g_topics[i].name, format);
+    this->get_parameter("w_" + topics[i].name, w);
+    this->get_parameter("h_" + topics[i].name, h);
+    this->get_parameter("format_" + topics[i].name, format);
     if (topic->Initialize(w, h, (ImageFormat)format)) {
       topic_list_.push_back(topic);
     } else {
@@ -230,10 +251,11 @@ bool StereoCameraNode::Shutdown()
 
 void StereoCameraNode::InitParameters()
 {
-  for (size_t i = 0; i < sizeof(g_topics) / sizeof(g_topics[0]); i++) {
-    this->declare_parameter("w_" + g_topics[i].name, g_topics[i].width);
-    this->declare_parameter("h_" + g_topics[i].name, g_topics[i].height);
-    this->declare_parameter("format_" + g_topics[i].name, (int)g_topics[i].format);
+  this->declare_parameter("stereo_only", false);
+  for (size_t i = 0; i < sizeof(g_all_topics) / sizeof(g_all_topics[0]); i++) {
+    this->declare_parameter("w_" + g_all_topics[i].name, g_all_topics[i].width);
+    this->declare_parameter("h_" + g_all_topics[i].name, g_all_topics[i].height);
+    this->declare_parameter("format_" + g_all_topics[i].name, (int)g_all_topics[i].format);
   }
 }
 

@@ -1,6 +1,7 @@
 /stereo_camera:
   ros__parameters:
     #0-bgr 1-rgb 2-gray
+    stereo_only: false
     format_left: 0
     format_rgb: 0
     format_right: 0
