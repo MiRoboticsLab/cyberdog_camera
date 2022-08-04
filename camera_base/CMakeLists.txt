@@ -39,6 +39,7 @@ link_directories(${MYSYSROOT}/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/tegra)
 add_compile_options(-Wno-pedantic
   -Wno-deprecated-declarations
   -Wno-unused-parameter
+  -Wno-missing-field-initializers
 )
 
 cuda_add_library(color_convert

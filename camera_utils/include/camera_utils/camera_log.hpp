@@ -22,20 +22,20 @@
 #endif
 
 #ifndef CAM_DEBUG
-#define CAM_DEBUG(fmt, arg ...) do { \
-    RCLCPP_DEBUG(rclcpp::get_logger(LOG_TAG), "%s: " fmt, __FUNCTION__, ## arg); \
+#define CAM_DEBUG(fmt, ...) do { \
+    RCLCPP_DEBUG(rclcpp::get_logger(LOG_TAG), "%s: " fmt, __FUNCTION__, ##__VA_ARGS__); \
 } while (0)
 #endif
 
 #ifndef CAM_INFO
-#define CAM_INFO(fmt, arg ...) do { \
-    RCLCPP_INFO(rclcpp::get_logger(LOG_TAG), "%s: " fmt, __FUNCTION__, ## arg); \
+#define CAM_INFO(fmt, ...) do { \
+    RCLCPP_INFO(rclcpp::get_logger(LOG_TAG), "%s: " fmt, __FUNCTION__, ##__VA_ARGS__); \
 } while (0)
 #endif
 
 #ifndef CAM_ERR
-#define CAM_ERR(fmt, arg ...) do { \
-    RCLCPP_ERROR(rclcpp::get_logger(LOG_TAG), "%s: " fmt, __FUNCTION__, ## arg); \
+#define CAM_ERR(fmt, ...) do { \
+    RCLCPP_ERROR(rclcpp::get_logger(LOG_TAG), "%s: " fmt, __FUNCTION__, ##__VA_ARGS__); \
 } while (0)
 #endif
 
