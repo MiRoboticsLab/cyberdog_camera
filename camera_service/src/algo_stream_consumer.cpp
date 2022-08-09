@@ -192,11 +192,11 @@ void AlgoStreamConsumer::imageBufferDone(ImageBuffer buffer)
 
 bool AlgoStreamConsumer::initSharedBuffer()
 {
-  if (0 != CreateShm(SHM_PROJ_ID, sizeof(double) + IMAGE_SIZE, shm_id_)) {
+  if (0 != CreateShm(SHM_PROJ_ID, sizeof(uint64_t) + IMAGE_SIZE, shm_id_)) {
     CAM_ERR("Failed to create shared memory.");
     return false;
   }
-  shm_addr_ = GetShmAddr(shm_id_, sizeof(double) + IMAGE_SIZE);
+  shm_addr_ = GetShmAddr(shm_id_, sizeof(uint64_t) + IMAGE_SIZE);
   if (shm_addr_ == nullptr) {
     CAM_ERR("Failed to map shared memory.");
     return false;

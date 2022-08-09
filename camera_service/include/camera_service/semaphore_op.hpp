@@ -66,7 +66,7 @@ inline int WaitSem(int sem_set_id, int sem_index)
   struct sembuf sem_buf;
   sem_buf.sem_num = sem_index;
   sem_buf.sem_op = -1;
-  sem_buf.sem_flg = SEM_UNDO;
+  sem_buf.sem_flg = 0;
 
   if (semop(sem_set_id, &sem_buf, 1) < 0) {
     std::cout << "Semaphore P operation fail. " << std::endl;
@@ -81,7 +81,7 @@ inline int SignalSem(int sem_set_id, int sem_index)
   struct sembuf sem_buf;
   sem_buf.sem_num = sem_index;
   sem_buf.sem_op = 1;
-  sem_buf.sem_flg = SEM_UNDO;
+  sem_buf.sem_flg = 0;
 
   if (semop(sem_set_id, &sem_buf, 1) < 0) {
     std::cout << "Semaphore V operation fail. " << std::endl;

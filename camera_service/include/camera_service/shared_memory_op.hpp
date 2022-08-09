@@ -25,7 +25,7 @@
 
 struct SharedImage
 {
-  double img_stamp;
+  uint64_t img_stamp;
   unsigned char img_data[IMAGE_SIZE];
 };
 
