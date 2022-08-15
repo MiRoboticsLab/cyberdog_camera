@@ -318,7 +318,7 @@ int ArgusCameraContext::stopCameraStream(Streamtype type)
 {
   std::lock_guard<std::mutex> lock(m_streamLock);
   if (!m_activeStreams[type]) {
-    return CAM_SUCCESS;
+    return CAM_INVALID_STATE;
   }
 
   if (CameraDispatcher::getInstance().isRepeating(m_captureSession.get())) {
@@ -403,9 +403,12 @@ int ArgusCameraContext::startRecording(std::string & filename, int width, int he
 
 int ArgusCameraContext::stopRecording(std::string & filename)
 {
-  filename = m_videoFilename;
+  int ret = stopCameraStream(STREAM_TYPE_VIDEO);
+  if (ret == CAM_SUCCESS) {
+    filename = m_videoFilename;
+  }
 
-  return stopCameraStream(STREAM_TYPE_VIDEO);
+  return ret;
 }
 
 int ArgusCameraContext::startRgbStream()
