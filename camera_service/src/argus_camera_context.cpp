@@ -450,7 +450,14 @@ int ArgusCameraContext::startImagePublish(int width, int height, int rate)
 
 int ArgusCameraContext::stopImagePublish()
 {
-  return stopCameraStream(STREAM_TYPE_RGB);
+  int ret = stopCameraStream(STREAM_TYPE_RGB);
+
+  //for image publish, return success if already started.
+  if (ret == CAM_INVALID_STATE) {
+    ret = CAM_SUCCESS;
+  }
+
+  return ret;
 }
 
 Size2D<uint32_t> ArgusCameraContext::getSensorSize()
