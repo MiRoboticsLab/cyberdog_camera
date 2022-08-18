@@ -55,6 +55,9 @@ public:
   bool cancelRequests(CaptureSession * session);
   Size2D<uint32_t> getSensorSize(uint32_t deviceIndex);
   SensorMode * findBestSensorMode(uint32_t deviceIndex, Size2D<uint32_t> size);
+  SensorMode * findBestSensorModeWithIds(uint32_t deviceIndex,
+    Size2D<uint32_t> size,
+    std::vector<uint32_t> &modeIds);
   SensorMode * getSensorMode(uint32_t deviceIndex, uint32_t modeIndex);
   bool setSensorMode(Request * request, SensorMode * mode);
 
@@ -63,6 +66,8 @@ private:
   ~CameraDispatcher();
   bool initialize();
   bool shutdown();
+  bool getAllSensorModes(uint32_t deviceIndex, std::vector<SensorMode *> *modes);
+  SensorMode * getBestSensorMode(Size2D<uint32_t> size, std::vector<SensorMode *> &modes);
 
   bool m_initialized;
   UniqueObj<CameraProvider> m_cameraProvider;

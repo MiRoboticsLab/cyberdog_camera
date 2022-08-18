@@ -360,15 +360,24 @@ bool CameraDispatcher::cancelRequests(CaptureSession * session)
   return true;
 }
 
+bool CameraDispatcher::getAllSensorModes(uint32_t deviceIndex,
+  std::vector<SensorMode *> *modes)
+{
+  // Get the camera mode.
+  Argus::ICameraProperties * iCameraProperties =
+    Argus::interface_cast<Argus::ICameraProperties>(m_cameraDevices[deviceIndex]);
+  iCameraProperties->getAllSensorModes(modes);
+
+  return true;
+}
+
 Size2D<uint32_t> CameraDispatcher::getSensorSize(uint32_t deviceIndex)
 {
   assert(m_cameraDevices.size() > deviceIndex);
 
   // Get the camera mode.
   std::vector<Argus::SensorMode *> sensorModes;
-  Argus::ICameraProperties * iCameraProperties =
-    Argus::interface_cast<Argus::ICameraProperties>(m_cameraDevices[deviceIndex]);
-  iCameraProperties->getAllSensorModes(&sensorModes);
+  getAllSensorModes(deviceIndex, &sensorModes);
   if (sensorModes.size() == 0) {
     CAM_ERR("No camera modes available");
     return Size2D<uint32_t>(0, 0);
@@ -382,42 +391,35 @@ Size2D<uint32_t> CameraDispatcher::getSensorSize(uint32_t deviceIndex)
   return iSensorMode->getResolution();
 }
 
-SensorMode * CameraDispatcher::findBestSensorMode(uint32_t deviceIndex, Size2D<uint32_t> size)
+SensorMode * CameraDispatcher::getBestSensorMode(Size2D<uint32_t> size,
+  std::vector<SensorMode *> &modes)
 {
-  assert(m_cameraDevices.size() > deviceIndex);
-
-  std::vector<Argus::SensorMode *> sensorModes;
-  Argus::ICameraProperties * iCameraProperties =
-    Argus::interface_cast<Argus::ICameraProperties>(m_cameraDevices[deviceIndex]);
-  iCameraProperties->getAllSensorModes(&sensorModes);
-  if (sensorModes.size() == 0) {
-    CAM_ERR("No camera modes available");
+  if (modes.size() == 0)
     return nullptr;
-  }
 
-  SensorMode *targetMode = sensorModes[0];
-  for (size_t i = 0; i < sensorModes.size(); i++) {
+  SensorMode *targetMode = modes[0];
+  for (size_t i = 0; i < modes.size(); i++) {
     // find first mode with same resolution.
     Argus::ISensorMode * iSensorMode =
-      Argus::interface_cast<Argus::ISensorMode>(sensorModes[i]);
+      Argus::interface_cast<Argus::ISensorMode>(modes[i]);
     Size2D<uint32_t> res = iSensorMode->getResolution();
     if (res.width() == size.width() && res.height() == size.height()) {
-      targetMode = sensorModes[i];
-      CAM_INFO("Found best sensor %u mode %u with same resolution (%u/%u).",
-          deviceIndex, i, res.width(), res.height());
+      targetMode = modes[i];
+      CAM_INFO("Found best sensor mode %u with same resolution (%u/%u).",
+          i, res.width(), res.height());
       return targetMode;
     }
   }
 
-  for (size_t i = 0; i < sensorModes.size(); i++) {
+  for (size_t i = 0; i < modes.size(); i++) {
     // find first mode with same aspect ratio.
     Argus::ISensorMode * iSensorMode =
-      Argus::interface_cast<Argus::ISensorMode>(sensorModes[i]);
+      Argus::interface_cast<Argus::ISensorMode>(modes[i]);
     Size2D<uint32_t> res = iSensorMode->getResolution();
     if ((res.width() * size.height()) == (size.width() * res.height())) {
-      targetMode = sensorModes[i];
-      CAM_INFO("Found best sensor %u mode %u with same aspect ratio (%u/%u).",
-          deviceIndex, i, res.width(), res.height());
+      targetMode = modes[i];
+      CAM_INFO("Found best sensor mode %u with same aspect ratio (%u/%u).",
+          i, res.width(), res.height());
       return targetMode;
     }
   }
@@ -427,14 +429,59 @@ SensorMode * CameraDispatcher::findBestSensorMode(uint32_t deviceIndex, Size2D<u
   return targetMode;
 }
 
+SensorMode * CameraDispatcher::findBestSensorMode(uint32_t deviceIndex, Size2D<uint32_t> size)
+{
+  assert(m_cameraDevices.size() > deviceIndex);
+
+  std::vector<Argus::SensorMode *> sensorModes;
+  getAllSensorModes(deviceIndex, &sensorModes);
+  if (sensorModes.size() == 0) {
+    CAM_ERR("No camera modes available");
+    return nullptr;
+  }
+
+  return getBestSensorMode(size, sensorModes);
+}
+
+SensorMode * CameraDispatcher::findBestSensorModeWithIds(uint32_t deviceIndex,
+    Size2D<uint32_t> size,
+    std::vector<uint32_t> &modeIds)
+{
+  assert(m_cameraDevices.size() > deviceIndex);
+
+  std::vector<Argus::SensorMode *> sensorModes;
+  getAllSensorModes(deviceIndex, &sensorModes);
+  if (sensorModes.size() == 0) {
+    CAM_ERR("No camera modes available");
+    return nullptr;
+  }
+
+  for (auto it = modeIds.begin(); it < modeIds.end(); it++) {
+    if (*it >= sensorModes.size()) {
+      CAM_INFO("mode %u is invalid.", *it);
+      modeIds.erase(it);
+    }
+  }
+
+  if (modeIds.size() == 0) {
+    CAM_INFO("No given modes, find the best in all modes.");
+    return findBestSensorMode(deviceIndex, size);
+  }
+
+  std::vector<Argus::SensorMode *> filter_modes;
+  for (auto it = modeIds.begin(); it < modeIds.end(); it++) {
+    filter_modes.push_back(sensorModes[*it]);
+  }
+
+  return getBestSensorMode(size, filter_modes);
+}
+
 SensorMode * CameraDispatcher::getSensorMode(uint32_t deviceIndex, uint32_t modeIndex)
 {
   assert(m_cameraDevices.size() > deviceIndex);
 
   std::vector<Argus::SensorMode *> sensorModes;
-  Argus::ICameraProperties * iCameraProperties =
-    Argus::interface_cast<Argus::ICameraProperties>(m_cameraDevices[deviceIndex]);
-  iCameraProperties->getAllSensorModes(&sensorModes);
+  getAllSensorModes(deviceIndex, &sensorModes);
   if (sensorModes.size() == 0) {
     CAM_ERR("No camera modes available");
     return nullptr;

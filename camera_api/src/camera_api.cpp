@@ -128,13 +128,17 @@ bool CameraHolder::startStream(
 
   SensorMode * mode = nullptr;
   if (sync_) {
+    std::vector<uint32_t> modes;
     switch (camera_id_) {
       case 1:
         mode = CameraDispatcher::getInstance().getSensorMode(camera_id_, 2);
         break;
       case 2:
       case 3:
-        mode = CameraDispatcher::getInstance().getSensorMode(camera_id_, 0);
+        modes.push_back(0);//mode 0
+        modes.push_back(2);//mode 2
+        mode = CameraDispatcher::getInstance().findBestSensorModeWithIds(camera_id_,
+                Size2D<uint32_t>(width, height), modes);
         break;
       default:
         CAM_ERR("Camera %d is not support sync mode.", camera_id_);
