@@ -44,6 +44,8 @@ static const char * camera_cmd_strings[] = {
   "GET_ALL_FILES",
   "START_LIVE_STREAM",
   "STOP_LIVE_STREAM",
+  "START_IMAGE_PUBLISH",
+  "STOP_IMAGE_PUBLISH"
 };
 
 static const char * get_cmd_string(unsigned int index)
@@ -142,6 +144,7 @@ void CameraServerNode::serviceCallback(
     "service received command %s, argument %s\n",
     get_cmd_string(request->command), request->args.c_str());
   CAM_INFO("width = %u, height = %u, fps = %u", request->width, request->height, request->fps);
+  TimePerf perf(get_cmd_string(request->command));
 
   switch (request->command) {
     case CameraServiceT::Request::SET_PARAMETERS:
