@@ -1,7 +1,11 @@
+#define LOG_TAG "STEREO_CAMERA"
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/executor.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <rclcpp_lifecycle/lifecycle_publisher.hpp>
 #include "camera_api/camera_api.hpp"
+#include "camera_utils/camera_log.hpp"
 #include "global_timestamp_reader.h"
 #include "cyberdog_visions_interfaces/msg/metadata.hpp"
 
@@ -27,21 +31,21 @@ double get_frame_timestamp(double frame_time)
 class CameraTopic
 {
   public:
-    CameraTopic(rclcpp::Node * parent, int camera_id, const std::string & name);
+    CameraTopic(rclcpp_lifecycle::LifecycleNode * parent, int camera_id, const std::string & name);
     ~CameraTopic();
 
     bool Initialize(int width, int height, ImageFormat format);
     bool Destroy();
 
-  private: 
+  private:
     static int sFrameCallback(cv::Mat & frame, uint64_t timestamp,uint32_t capture_id, void * arg);
     void PublishImage(cv::Mat & frame, uint64_t timestamp,uint32_t frame_number);
     void publishMetadata(uint64_t t_real_sys, uint64_t t_hw,uint32_t frame_number);
 
     std::string name_;
-    rclcpp::Node *parent_;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_;
-    rclcpp::Publisher<cyberdog_visions_interfaces::msg::Metadata>::SharedPtr pub_metadata;
+    rclcpp_lifecycle::LifecycleNode *parent_;
+    rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr pub_;
+    rclcpp_lifecycle::LifecyclePublisher<cyberdog_visions_interfaces::msg::Metadata>::SharedPtr pub_metadata;
 
     CameraHandle cam_hdl_;
     int camera_id_;
@@ -50,21 +54,52 @@ class CameraTopic
     ImageFormat format_;
 };
 
-class StereoCameraNode : public rclcpp::Node
+class StereoCameraNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
   StereoCameraNode(const std::string & name);
   ~StereoCameraNode();
 
+protected:
+  //  override LifecycleNode methods
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override
+  {
+    CAM_INFO("configure");
+    return CallbackReturn::SUCCESS;
+  }
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override
+  {
+    CAM_INFO("activate");
+    Initialize();
+    return CallbackReturn::SUCCESS;
+  }
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override
+  {
+    CAM_INFO("deactivate");
+    Shutdown();
+    return CallbackReturn::SUCCESS;
+  }
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override
+  {
+    CAM_INFO("cleanup");
+    return CallbackReturn::SUCCESS;
+  }
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override
+  {
+    CAM_INFO("shutdown");
+    return CallbackReturn::SUCCESS;
+  }
+
+private:
   bool Initialize();
   bool Shutdown();
 
-private:
   void InitParameters();
   std::vector<CameraTopic *> topic_list_;
 };
 
-CameraTopic::CameraTopic(rclcpp::Node * parent, int camera_id, const std::string & name)
+CameraTopic::CameraTopic(rclcpp_lifecycle::LifecycleNode * parent,
+        int camera_id, const std::string & name)
 : name_(name),
   parent_(parent),
   cam_hdl_(nullptr),
@@ -73,9 +108,11 @@ CameraTopic::CameraTopic(rclcpp::Node * parent, int camera_id, const std::string
   auto qos = rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 10));
   qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
   pub_ = parent_->create_publisher<sensor_msgs::msg::Image>("image_" + name, qos);
+  pub_->on_activate();
   if(name_ == "left")
   {
     pub_metadata = parent_->create_publisher<cyberdog_visions_interfaces::msg::Metadata>("image_" + name_+"_metadata", qos);
+    pub_metadata->on_activate();
   }
 }
 
@@ -173,9 +210,9 @@ void CameraTopic::publishMetadata(uint64_t t_real_sys, uint64_t t_hw, uint32_t f
 }
 
 StereoCameraNode::StereoCameraNode(const std::string & name)
-  : rclcpp::Node(name)
+  : rclcpp_lifecycle::LifecycleNode(name)
 {
-  Initialize();
+  InitParameters();
 }
 
 StereoCameraNode::~StereoCameraNode()
@@ -209,7 +246,6 @@ bool StereoCameraNode::Initialize()
   bool stereo_only;
   globalTime.enable_time_diff_keeper(true);
 
-  InitParameters();
 
   topic_info *topics;
   size_t count = 0;
@@ -246,6 +282,8 @@ bool StereoCameraNode::Shutdown()
     topic_list_[i]->Destroy();
     delete topic_list_[i];
   }
+  topic_list_.clear();
+
   return true;
 }
 
@@ -268,8 +306,8 @@ int main(int argc, char** argv)
   rclcpp::executors::SingleThreadedExecutor exec;
   rclcpp::NodeOptions options;
 
-  auto my_node = std::make_shared<cyberdog::camera::StereoCameraNode>("stereo_camera");
-  exec.add_node(my_node);
+  auto stereo_node = std::make_shared<cyberdog::camera::StereoCameraNode>("stereo_camera");
+  exec.add_node(stereo_node->get_node_base_interface());
 
   exec.spin();
   rclcpp::shutdown();

@@ -11,8 +11,11 @@
 
   <depend>sensor_msgs</depend>
   <depend>camera_api</depend>
+  <depend>camera_utils</depend>
   <depend>camera_service</depend>
   <depend>cyberdog_visions_interfaces</depend>  
+  <depend>lifecycle_msgs</depend>
+  <depend>rclcpp_lifecycle</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
