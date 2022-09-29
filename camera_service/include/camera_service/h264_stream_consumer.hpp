@@ -24,7 +24,6 @@
 #include <memory>
 #include <vector>
 #include "camera_base/stream_consumer.hpp"
-#include "camera_base/video_encoder.hpp"
 #include "ros2_service.hpp"
 
 namespace cyberdog
@@ -45,37 +44,13 @@ public:
   virtual bool processBuffer(Buffer * buffer);
 
 private:
-  static void inputDoneCallback(int dmabuf_fd, void * arg)
-  {
-    H264StreamConsumer * thiz = static_cast<H264StreamConsumer *>(arg);
-    thiz->inputDoneCallback(dmabuf_fd);
-  }
-  static void outputDoneCallback(uint8_t * data, size_t size, int64_t ts, void * arg)
-  {
-    H264StreamConsumer * thiz = static_cast<H264StreamConsumer *>(arg);
-    thiz->outputDoneCallback(data, size, ts);
-  }
-
-  void inputDoneCallback(int fd);
-  void outputDoneCallback(uint8_t * data, size_t size, int64_t ts);
   void publishImage(uint64_t frame_id, ImageBuffer & buf);
-  void publishH264Image(uint8_t * data, size_t size, int64_t timestamp);
-  void bodySubCallback(const BodyInfoT::SharedPtr msg);
-  void drawBodyRectangles(int fd);
 
   bool startSoundTimer();
   void stopSoundTimer();
   static void playVideoSound(union sigval val);
 
-  VideoEncoder * m_videoEncoder;
-  void * m_nvosdContext;
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_publisher;
-  rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr m_h264Publisher;
   timer_t m_timer;
-
-  rclcpp::Subscription<BodyInfoT>::SharedPtr m_bodySub;
-  std::vector<BodyT> m_currentBodyRects;
-  std::mutex m_rectLock;
 
   // for live stream
   int i420_fd_;

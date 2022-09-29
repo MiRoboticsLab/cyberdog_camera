@@ -32,22 +32,8 @@ namespace camera
 
 H264StreamConsumer::H264StreamConsumer(Size2D<uint32_t> size, StreamCb callback)
 : StreamConsumer(size),
-  m_videoEncoder(NULL),
   live_stream_cb_(callback)
 {
-  auto qos = rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 10));
-  qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
-  m_h264Publisher =
-    CameraManager::getInstance()->create_publisher<sensor_msgs::msg::CompressedImage>(
-    "h264_video", qos);
-
-  m_bodySub = CameraManager::getInstance()->create_subscription<BodyInfoT>(
-    "body", qos,
-    std::bind(&H264StreamConsumer::bodySubCallback, this, std::placeholders::_1));
-
-  // for video
-  //m_video_stream = std::make_shared<live_stream::VideoStream>(
-  //  std::string("rtmp://127.0.0.1:1935/live"));
 }
 
 H264StreamConsumer::~H264StreamConsumer()
@@ -59,37 +45,6 @@ bool H264StreamConsumer::threadInitialize()
   if (!StreamConsumer::threadInitialize()) {
     return false;
   }
-
-  m_videoEncoder = new VideoEncoder(
-    "enc",
-    m_size.width(), m_size.height(), V4L2_PIX_FMT_H264);
-
-  if (!m_videoEncoder) {
-    CAM_ERR("failed to create VideoEncoder\n");
-    return false;
-  }
-
-  m_nvosdContext = nvosd_create_context();
-  if (!m_nvosdContext) {
-    CAM_ERR("Failed to create nvosd context");
-  }
-
-  // for video
-  /*m_video_stream->configure(m_size.width(), m_size.height());
-  if ((m_video_stream->initDecoder()) < 0) {
-    CAM_ERR("Failed to init video decoder");
-  }*/
-
-  m_videoEncoder->setInputDoneCallback(inputDoneCallback, this);
-  m_videoEncoder->setOutputDoneCallback(outputDoneCallback, this);
-
-  video_encoder_settings settings;
-  settings.bitrate = 1 * 1024 * 1024;
-  settings.profile = V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE;
-  settings.insert_sps = true;
-
-  m_videoEncoder->initialize(settings);
-  startSoundTimer();
 
   NvBufferCreateParams input_params;
   input_params.width = m_size.width();
@@ -104,37 +59,15 @@ bool H264StreamConsumer::threadInitialize()
     return false;
   }
 
-
-#ifdef USE_SOFT_ENC
-  //m_video_stream->startWork();
-#endif
   return true;
 }
 
 bool H264StreamConsumer::threadShutdown()
 {
-#ifdef USE_SOFT_ENC
-  //m_video_stream->reset();
-#endif
-  stopSoundTimer();
-  m_videoEncoder->encodeFromFd(-1);
-  m_videoEncoder->shutdown();
-
-  if (m_nvosdContext) {
-    nvosd_destroy_context(m_nvosdContext);
-  }
-
-  delete m_videoEncoder;
-  m_videoEncoder = NULL;
-
   if (i420_fd_ > 0) {
     NvBufferDestroy(i420_fd_);
   }
 
-
-#ifndef USE_SOFT_ENC
-  //m_video_stream->reset();
-#endif
   return StreamConsumer::threadShutdown();
 }
 
@@ -154,10 +87,6 @@ bool H264StreamConsumer::processBuffer(Buffer * buffer)
 
   DmaBuffer * dma_buf = DmaBuffer::fromArgusBuffer(buffer);
   int fd = dma_buf->getFd();
-
-  if (m_videoEncoder) {
-    m_videoEncoder->encodeFromFd(fd);
-  }
 
   NvBufferTransformParams transform_params;
   NvBufferRect src_rect, dest_rect;
@@ -188,53 +117,11 @@ bool H264StreamConsumer::processBuffer(Buffer * buffer)
 
   publishImage(m_frameCount, buf);
 #endif
+  bufferDone(buffer);
 
   m_frameCount++;
 
   return true;
-}
-
-void H264StreamConsumer::drawBodyRectangles(int fd)
-{
-  m_rectLock.lock();
-  std::vector<NvOSD_RectParams> rectParams;
-  for (size_t i = 0; i < m_currentBodyRects.size(); i++) {
-    NvOSD_RectParams param;
-    param.left = m_currentBodyRects[i].roi.x_offset;
-    param.top = m_currentBodyRects[i].roi.y_offset;
-    param.width = m_currentBodyRects[i].roi.width;
-    param.height = m_currentBodyRects[i].roi.height;
-    param.border_width = 7;
-    if (m_currentBodyRects[i].reid.length() > 0) {
-      param.border_color.red = 1.0f;
-      param.border_color.green = 0.0;
-      param.border_color.blue = 0.0;
-    } else {
-      param.border_color.red = 0.0;
-      param.border_color.green = 0.0;
-      param.border_color.blue = 1.0f;
-    }
-    rectParams.push_back(param);
-  }
-  m_rectLock.unlock();
-
-  if (rectParams.size() > 0) {
-    nvosd_draw_rectangles(m_nvosdContext, MODE_HW, fd, rectParams.size(), rectParams.data());
-  }
-}
-
-void H264StreamConsumer::inputDoneCallback(int fd)
-{
-  Argus::Buffer * buffer = getBufferFromFd(fd);
-
-  if (buffer) {
-    bufferDone(buffer);
-  }
-}
-
-void H264StreamConsumer::outputDoneCallback(uint8_t * data, size_t size, int64_t ts)
-{
-  publishH264Image(data, size, ts);
 }
 
 void H264StreamConsumer::publishImage(uint64_t frame_id, ImageBuffer & buf)
@@ -259,40 +146,6 @@ void H264StreamConsumer::publishImage(uint64_t frame_id, ImageBuffer & buf)
   }
   delete[] data;
 #endif
-}
-
-void H264StreamConsumer::publishH264Image(uint8_t * data, size_t size, int64_t timestamp)
-{
-  auto msg = std::make_unique<sensor_msgs::msg::CompressedImage>();
-  msg->header.stamp.sec = timestamp / (1000 * 1000);
-  msg->header.stamp.nanosec = (timestamp % (1000 * 1000)) * 1000;
-  msg->format = "h264";
-  msg->data.resize(size);
-  memcpy(&msg->data[0], data, size);
-
-  m_h264Publisher->publish(std::move(msg));
-}
-
-void H264StreamConsumer::bodySubCallback(const BodyInfoT::SharedPtr msg)
-{
-  bool has_reid = false;
-  int reid_index = 0;
-  for (size_t i = 0; i < msg->infos.size(); i++) {
-    if (msg->infos[i].reid.length() > 0) {
-      has_reid = true;
-      reid_index = i;
-      break;
-    }
-  }
-
-  m_rectLock.lock();
-  m_currentBodyRects.clear();
-  if (has_reid) {
-    m_currentBodyRects.push_back(msg->infos[reid_index]);
-  } else if (!AlgoDispatcher::getInstance().isBodyTracked()) {
-    m_currentBodyRects = msg->infos;
-  }
-  m_rectLock.unlock();
 }
 
 bool H264StreamConsumer::startSoundTimer()
@@ -334,7 +187,6 @@ void H264StreamConsumer::playVideoSound(union sigval val)
   (void)val;
   NCSClient::getInstance().play(SoundRecording);
 }
-
 
 }  // namespace camera
 }  // namespace cyberdog
