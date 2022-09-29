@@ -40,7 +40,7 @@ const int ALGO_HEIGHT_DEFAULT = 480;
 const int IMAGE_WIDTH_DEFAULT = 640;
 const int IMAGE_HEIGHT_DEFAULT = 480;
 const int LIVE_WIDTH_DEFAULT = 1280;
-const int LIVE_HEIGHT_DEFAULT = 960;
+const int LIVE_HEIGHT_DEFAULT = 720;
 
 ArgusCameraContext::ArgusCameraContext(int camId)
 : m_cameraId(camId),
@@ -292,6 +292,12 @@ int ArgusCameraContext::startCameraStream(
   stream->initialize();
   stream->waitRunning();
 
+  if (type == STREAM_TYPE_H264) {
+    //preview use 1280x720
+    CameraDispatcher::getInstance().setStreamClipRect(m_previewRequest.get(),
+              stream->getOutputStream(), Argus::Rectangle<float>(0, 0.125, 1, 0.875));
+  }
+
   m_activeStreams[type] = stream;
   CameraDispatcher::getInstance().enableOutputStream(
     m_previewRequest.get(), m_activeStreams[type]->getOutputStream());
@@ -359,7 +365,7 @@ int ArgusCameraContext::startPreview(std::string & usage)
   int ret = CAM_SUCCESS;
   ret = startCameraStream(
     STREAM_TYPE_H264,
-    Size2D<uint32_t>(VIDEO_WIDTH_DEFAULT, VIDEO_HEIGHT_DEFAULT), NULL);
+    Size2D<uint32_t>(LIVE_WIDTH_DEFAULT, LIVE_HEIGHT_DEFAULT), NULL);
 
   if (ret == CAM_SUCCESS && usage == "preview") {
     NCSClient::getInstance().play(SoundLiveStart);

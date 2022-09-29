@@ -515,5 +515,22 @@ bool CameraDispatcher::setSensorMode(Request * request, SensorMode * mode)
   return true;
 }
 
+bool CameraDispatcher::setStreamClipRect(Request * request, OutputStream * stream, const Argus::Rectangle<float> &rect)
+{
+  Argus::IRequest *iRequest = Argus::interface_cast<Argus::IRequest>(request);
+  if (!iRequest) {
+    CAM_ERR("Failed to get IRequest interface");
+    return false;
+  }
+
+  Argus::IStreamSettings *streamSettings = Argus::interface_cast<Argus::IStreamSettings>
+        (iRequest->getStreamSettings(stream));
+  streamSettings->setSourceClipRect(rect);
+  Argus::Rectangle<float> r = streamSettings->getSourceClipRect();
+  CAM_INFO("rect: (%f %f %f %f)", r.left(), r.top(), r.right(), r.bottom());
+
+  return true;
+}
+
 }  // namespace camera
 }  // namespace cyberdog

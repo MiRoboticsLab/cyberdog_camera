@@ -60,6 +60,7 @@ public:
     std::vector<uint32_t> &modeIds);
   SensorMode * getSensorMode(uint32_t deviceIndex, uint32_t modeIndex);
   bool setSensorMode(Request * request, SensorMode * mode);
+  bool setStreamClipRect(Request * request, OutputStream * stream, const Argus::Rectangle<float> &rect);
 
 private:
   CameraDispatcher();
