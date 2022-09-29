@@ -394,10 +394,6 @@ int ArgusCameraContext::startRecording(std::string & filename, int width, int he
     m_videoFilename = filename;
   }
 
-  if (ret == CAM_INVALID_STATE) {
-    ret = CAM_SUCCESS;
-  }
-
   return ret;
 }
 

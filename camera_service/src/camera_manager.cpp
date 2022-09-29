@@ -106,19 +106,55 @@ int CameraManager::stopPreview()
   return m_camera->stopPreview();
 }
 
+void CameraManager::connSubCallback(const std_msgs::msg::Bool::SharedPtr msg)
+{
+    CAM_INFO("connect status : %d", msg->data);
+    if (!msg->data) {
+      CAM_INFO("recived app disconnect message, stop recording.");
+      std::string filename;
+      if (stopRecording(filename) == CAM_SUCCESS) {
+        CAM_INFO("stopRecording success, file %s", filename.c_str());
+        auto file_msg = std::make_unique<std_msgs::msg::String>();
+        file_msg->data = filename;
+        m_videoFilePub->publish(std::move(file_msg));
+        if (m_videoFilePub.get()) {
+          CAM_INFO("destroy video file name publisher");
+          m_videoFilePub.reset();
+        }
+      }
+    }
+}
+
 int CameraManager::startRecording(std::string & filename, int width, int height)
 {
+  int ret = CAM_SUCCESS;
   if (access(CAMERA_PATH, 0) != 0) {
     umask(0);
     mkdir(CAMERA_PATH, 0755);
   }
 
   filename = get_time_string() + ".mp4";
-  return m_camera->startRecording(filename, width, height);
+  ret = m_camera->startRecording(filename, width, height);
+  if (ret == CAM_SUCCESS) {
+    if (!m_connStateSub.get()) {
+      CAM_INFO("create connect status subscription and file name publisher");
+      auto qos = rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 10));
+      qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+      m_connStateSub = create_subscription<std_msgs::msg::Bool>("app_connection_state",
+          qos, std::bind(&CameraManager::connSubCallback, this, std::placeholders::_1));
+      m_videoFilePub = create_publisher<std_msgs::msg::String>("autosaved_video_file", qos);
+    }
+  }
+
+  return ret;
 }
 
 int CameraManager::stopRecording(std::string & filename)
 {
+  if (m_connStateSub.get()) {
+    CAM_INFO("destroy connect status subscription");
+    m_connStateSub.reset();
+  }
   return m_camera->stopRecording(filename);
 }
 

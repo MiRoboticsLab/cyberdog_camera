@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(protocol REQUIRED)
 find_package(camera_base REQUIRED)
@@ -55,6 +56,7 @@ ament_target_dependencies(${PROJECT_NAME}
   camera_base
   rclcpp
   rclcpp_action
+  std_msgs
   sensor_msgs
   protocol
   camera_utils

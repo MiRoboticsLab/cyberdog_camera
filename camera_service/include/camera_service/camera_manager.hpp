@@ -16,9 +16,14 @@
 #define CAMERA_SERVICE__CAMERA_MANAGER_HPP_
 
 #include <rclcpp_action/rclcpp_action.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <string>
 #include <memory>
-#include "./argus_camera_context.hpp"
+#include "argus_camera_context.hpp"
+#ifdef Bool
+#undef Bool
+#endif
+#include <std_msgs/msg/bool.hpp>
 
 namespace cyberdog
 {
@@ -102,6 +107,11 @@ private:
   rclcpp::Node * m_parentNode;
   std::string m_lastPictureName;
   uint32_t m_pictureIndex;
+
+  //for automatically stop recording
+  void connSubCallback(const std_msgs::msg::Bool::SharedPtr msg);
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr m_connStateSub;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr m_videoFilePub;
 };
 
 }  // namespace camera
