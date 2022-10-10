@@ -2,12 +2,12 @@
   ros__parameters:
     stereo_only: false
     #0-bgr 1-rgb 2-gray
-    format_left: 0
-    format_rgb: 0
-    format_right: 0
+    format_left: 2
+    format_rgb: 2
+    format_right: 2
     h_left: 400
     h_rgb: 480
     h_right: 400
-    w_left: 640
+    w_left: 500
     w_rgb: 640
-    w_right: 640
+    w_right: 500
