@@ -66,10 +66,9 @@ inline int WaitSem(int sem_set_id, int sem_index)
   struct sembuf sem_buf;
   sem_buf.sem_num = sem_index;
   sem_buf.sem_op = -1;
-  sem_buf.sem_flg = 0;
+  sem_buf.sem_flg = IPC_NOWAIT;
 
   if (semop(sem_set_id, &sem_buf, 1) < 0) {
-    std::cout << "Semaphore P operation fail. " << std::endl;
     return -1;
   }
 
