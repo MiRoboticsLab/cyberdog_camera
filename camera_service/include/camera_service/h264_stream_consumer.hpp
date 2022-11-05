@@ -31,7 +31,7 @@ namespace cyberdog
 namespace camera
 {
 
-using StreamCb = std::function<void(uint8_t *, int64_t, uint16_t)>;
+using StreamCb = std::function<void(uint8_t *, int64_t, uint16_t, int, int)>;
 
 class H264StreamConsumer : public StreamConsumer
 {

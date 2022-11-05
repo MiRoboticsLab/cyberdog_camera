@@ -45,8 +45,7 @@ const int LIVE_HEIGHT_DEFAULT = 720;
 ArgusCameraContext::ArgusCameraContext(int camId)
 : m_cameraId(camId),
   m_isStreaming(false),
-  liveStream_(CameraManager::getInstance()->getParent(),
-    LIVE_WIDTH_DEFAULT, LIVE_HEIGHT_DEFAULT),
+  liveStream_(CameraManager::getInstance()->getParent()),
   live_stream_cb_(nullptr)
 {
   initialize();

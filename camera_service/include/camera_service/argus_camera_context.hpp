@@ -78,7 +78,7 @@ private:
   std::mutex m_streamLock;
   bool m_isStreaming;
   cyberdog::interaction::LiveStreamBroadcaster liveStream_;
-  std::function<void(uint8_t *, int64_t, uint16_t)> live_stream_cb_;
+  std::function<void(uint8_t *, int64_t, uint16_t, int, int)> live_stream_cb_;
 };
 
 }  // namespace camera
