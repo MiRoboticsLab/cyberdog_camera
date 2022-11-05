@@ -41,7 +41,7 @@ public:
   bool startCamera();
   bool stopCamera();
 
-  int startPreview(std::string & usage);
+  int startPreview(int width, int height, std::string & usage);
   int stopPreview();
   int startRecording(std::string & filename, int width = 0, int height = 0);
   int stopRecording(std::string & filename);
