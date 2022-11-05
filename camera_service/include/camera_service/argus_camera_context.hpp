@@ -49,7 +49,7 @@ public:
   bool initCameraContext();
   bool deinitCameraContext();
   int takePicture(const char * path, int width, int height);
-  int startPreview(std::string & usage);
+  int startPreview(int width, int height, std::string & usage);
   int stopPreview();
   int startRecording(std::string & filename, int width, int height);
   int stopRecording(std::string & filename);
@@ -78,7 +78,7 @@ private:
   std::mutex m_streamLock;
   bool m_isStreaming;
   cyberdog::interaction::LiveStreamBroadcaster liveStream_;
-  std::function<void(uint8_t *, int64_t, uint16_t)> live_stream_cb_;
+  std::function<void(uint8_t *, int64_t, uint16_t, int, int)> live_stream_cb_;
 };
 
 }  // namespace camera

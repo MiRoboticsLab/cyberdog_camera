@@ -30,6 +30,7 @@ StreamConsumer::StreamConsumer(Size2D<uint32_t> size, NvBufferLayout layout, int
   m_fps(0),
   m_eglDisplay(EGL_NO_DISPLAY)
 {
+  CAM_INFO("Stream size: %ux%u", size.width(), size.height());
   if (m_maxBuffersNum > MAX_BUFFERS_NUM) {
     m_maxBuffersNum = MAX_BUFFERS_NUM;
   }

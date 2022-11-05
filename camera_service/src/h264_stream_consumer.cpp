@@ -142,7 +142,7 @@ void H264StreamConsumer::publishImage(uint64_t frame_id, ImageBuffer & buf)
   int64_t timestamp =
       buf.timestamp.tv_sec * 1000 * 1000  * 1000 + buf.timestamp.tv_nsec;
   if (live_stream_cb_) {
-    live_stream_cb_(data, timestamp, frame_id);
+    live_stream_cb_(data, timestamp, frame_id, height, width);
   }
   delete[] data;
 #endif

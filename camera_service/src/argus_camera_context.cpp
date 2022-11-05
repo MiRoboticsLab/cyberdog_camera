@@ -45,8 +45,7 @@ const int LIVE_HEIGHT_DEFAULT = 720;
 ArgusCameraContext::ArgusCameraContext(int camId)
 : m_cameraId(camId),
   m_isStreaming(false),
-  liveStream_(CameraManager::getInstance()->getParent(),
-    LIVE_WIDTH_DEFAULT, LIVE_HEIGHT_DEFAULT),
+  liveStream_(CameraManager::getInstance()->getParent()),
   live_stream_cb_(nullptr)
 {
   initialize();
@@ -292,10 +291,22 @@ int ArgusCameraContext::startCameraStream(
   stream->initialize();
   stream->waitRunning();
 
+  //图传可以选择居中、顶部、底部裁切
   if (type == STREAM_TYPE_H264) {
-    //preview use 1280x720
+    std::string * position = static_cast<std::string *>(args);
+    float crop_ratio = 1.f - (4.f * size.height()) / (3.f * size.width());
+
+    //默认是居中裁切
+    Argus::Rectangle<float> clip_rect = {0, crop_ratio / 2, 1, (1 - crop_ratio / 2)};
+    if (position != NULL) {
+      if (*position == "top") {
+        clip_rect = {0, 0, 1, (1 - crop_ratio)};
+      } else if (*position ==  "bottom") {
+        clip_rect = {0, crop_ratio, 1, 1};
+      }
+    }
     CameraDispatcher::getInstance().setStreamClipRect(m_previewRequest.get(),
-              stream->getOutputStream(), Argus::Rectangle<float>(0, 0.125, 1, 0.875));
+              stream->getOutputStream(), clip_rect);
   }
 
   m_activeStreams[type] = stream;
@@ -360,12 +371,18 @@ int ArgusCameraContext::stopCameraStream(Streamtype type)
   return CAM_SUCCESS;
 }
 
-int ArgusCameraContext::startPreview(std::string & usage)
+int ArgusCameraContext::startPreview(int width, int height, std::string & usage)
 {
   int ret = CAM_SUCCESS;
+
+  if (width == 0 || height == 0) {
+    CAM_INFO("preview size not set, use default");
+    width = LIVE_WIDTH_DEFAULT;
+    height = LIVE_HEIGHT_DEFAULT;
+  }
   ret = startCameraStream(
     STREAM_TYPE_H264,
-    Size2D<uint32_t>(LIVE_WIDTH_DEFAULT, LIVE_HEIGHT_DEFAULT), NULL);
+    Size2D<uint32_t>(width, height), &usage);
 
   if (ret == CAM_SUCCESS && usage == "preview") {
     NCSClient::getInstance().play(SoundLiveStart);

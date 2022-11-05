@@ -96,9 +96,9 @@ bool CameraManager::stopCamera()
   return true;
 }
 
-int CameraManager::startPreview(std::string & usage)
+int CameraManager::startPreview(int width, int height, std::string & usage)
 {
-  return m_camera->startPreview(usage);
+  return m_camera->startPreview(width, height, usage);
 }
 
 int CameraManager::stopPreview()

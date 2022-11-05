@@ -171,7 +171,8 @@ void CameraServerNode::serviceCallback(
       break;
     case CameraServiceT::Request::START_LIVE_STREAM:
       response->result =
-        CameraManager::getInstance()->startPreview(request->args);
+        CameraManager::getInstance()->startPreview(
+            request->width, request->height, request->args);
       break;
     case CameraServiceT::Request::STOP_LIVE_STREAM:
       response->result =
