@@ -14,6 +14,8 @@ find_package(rclcpp REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
   src/camera_utils.cpp
+  src/dispatcher.cpp
+  src/global_timestamp_reader.cpp
 )
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp

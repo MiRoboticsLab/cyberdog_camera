@@ -23,6 +23,7 @@
 #include "camera_base/camera_buffer.hpp"
 #include "camera_utils/camera_utils.hpp"
 #include "camera_utils/camera_queue.hpp"
+#include "camera_utils/global_timestamp_reader.h"
 
 namespace cyberdog
 {
@@ -51,6 +52,7 @@ private:
   void deinitSharedBuffer();
 
   void imageBufferDone(ImageBuffer buffer);
+  double get_frame_timestamp(double frame_time);
 
   int m_rgbaFd;
   ColorConvert * m_convert;
@@ -61,6 +63,7 @@ private:
   int shm_id_;
   int sem_set_id_;
   char * shm_addr_;
+  global_time_interface global_time_;
 };
 
 }  // namespace camera

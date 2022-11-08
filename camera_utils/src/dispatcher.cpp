@@ -1,9 +1,8 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2021 Intel Corporation. All Rights Reserved.
 
-#include "concurrency.h"
+#include "camera_utils/concurrency.h"
 #include "waiting-on.h"
-
 
 dispatcher::dispatcher( unsigned int cap, std::function< void( action ) > on_drop_callback )
     : _queue( cap, on_drop_callback )

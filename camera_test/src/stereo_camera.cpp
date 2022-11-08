@@ -6,7 +6,7 @@
 #include <rclcpp_lifecycle/lifecycle_publisher.hpp>
 #include "camera_api/camera_api.hpp"
 #include "camera_utils/camera_log.hpp"
-#include "global_timestamp_reader.h"
+#include "camera_utils/global_timestamp_reader.h"
 #include "cyberdog_visions_interfaces/msg/metadata.hpp"
 
 namespace cyberdog

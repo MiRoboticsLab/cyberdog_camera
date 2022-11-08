@@ -3,9 +3,7 @@
 
 #pragma once
 
-//#include "sensor.h"
 #include "concurrency.h"
-//#include "error-handling.h"
 #include <deque>
 
 namespace cyberdog
@@ -95,12 +93,9 @@ namespace camera
                                 std::shared_ptr<global_time_option>);
 
         double get_frame_timestamp(double frametime) ;
-        //unsigned long long get_frame_counter(const std::shared_ptr<frame_interface>& frame) const override;
-        //rs2_timestamp_domain get_frame_timestamp_domain(const std::shared_ptr<frame_interface>& frame) const override;
         void reset() ;
 
     private:
-        // std::unique_ptr<frame_timestamp_reader> _device_timestamp_reader;
         std::weak_ptr<time_diff_keeper> _time_diff_keeper;
         mutable std::recursive_mutex _mtx;
         std::shared_ptr<global_time_option> _option_is_enabled;
@@ -109,19 +104,12 @@ namespace camera
 
     class global_time_interface
     {
-    protected:
-       // std::shared_ptr<time_diff_keeper> _tf_keeper;
-
     public:
 	std::shared_ptr<time_diff_keeper> _tf_keeper;
         global_time_interface();
         ~global_time_interface() { _tf_keeper.reset(); }
         void enable_time_diff_keeper(bool is_enable);
-        //virtual double get_device_time_ms() = 0; // Returns time in miliseconds.
-        //virtual void create_snapshot(std::shared_ptr<global_time_interface>& snapshot)  {}
-        //virtual void enable_recording(std::function<void(const global_time_interface&)> record_action)  {}
     };
-    //MAP_EXTENSION(RS2_EXTENSION_GLOBAL_TIMER, librealsense::global_time_interface);
 
 }
 }
