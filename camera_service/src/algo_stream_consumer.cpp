@@ -32,6 +32,7 @@ AlgoStreamConsumer::AlgoStreamConsumer(Size2D<uint32_t> size)
 , shm_addr_(nullptr)
 {
   initSharedBuffer();
+  global_time_.enable_time_diff_keeper(true);
 }
 
 AlgoStreamConsumer::~AlgoStreamConsumer()
@@ -115,6 +116,18 @@ bool AlgoStreamConsumer::threadShutdown()
   return StreamConsumer::threadShutdown();
 }
 
+double AlgoStreamConsumer::get_frame_timestamp(double frame_time)
+{
+  auto sp = global_time_._tf_keeper;
+  bool ts_is_ready;
+  if (sp)
+      frame_time = sp->get_system_hw_time(frame_time, ts_is_ready);
+  else
+      CAM_ERR("Notification: global_timestamp_reader - time_diff_keeper is being shut-down");
+
+  return frame_time;
+}
+
 bool AlgoStreamConsumer::processBuffer(Buffer * buffer)
 {
   struct timespec ts;
@@ -127,6 +140,18 @@ bool AlgoStreamConsumer::processBuffer(Buffer * buffer)
   float frameRate;
   if (getFrameRate(frameRate)) {
     CAM_INFO("%.2f frames per second", frameRate);
+  }
+
+  uint64_t hw_ts = 0, aligned_ts = 0;
+  double real_ts_sys;
+  IBuffer * iBuffer = Argus::interface_cast<IBuffer>(buffer);
+  const Argus::CaptureMetadata * metadata = iBuffer->getMetadata();
+  const Argus::ICaptureMetadata * iMetadata =
+      Argus::interface_cast<const Argus::ICaptureMetadata>(metadata);
+  if (iMetadata) {
+    hw_ts = iMetadata->getSensorTimestamp();
+    real_ts_sys = get_frame_timestamp(hw_ts * 0.000001)*0.001;
+    aligned_ts = (uint64_t)(real_ts_sys * 1000 * 1000 * 1000);
   }
 
   DmaBuffer * dma_buf = DmaBuffer::fromArgusBuffer(buffer);
@@ -162,8 +187,7 @@ bool AlgoStreamConsumer::processBuffer(Buffer * buffer)
       int ret = WaitSem(sem_set_id_, 1);
       if (ret == 0) {
         WaitSem(sem_set_id_, 0);
-        uint64_t time = ts.tv_sec * 1000 * 1000 * 1000 + ts.tv_nsec;
-        memcpy(shm_addr_, &time, sizeof(uint64_t));
+        memcpy(shm_addr_, &aligned_ts, sizeof(uint64_t));
         m_convert->convertRGBAToBGR(shm_addr_ + sizeof(uint64_t));
         SignalSem(sem_set_id_, 0);
         SignalSem(sem_set_id_, 2);

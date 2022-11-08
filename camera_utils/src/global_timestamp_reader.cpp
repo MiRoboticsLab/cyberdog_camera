@@ -1,6 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
-#include "global_timestamp_reader.h"
+#include "camera_utils/global_timestamp_reader.h"
 #include <chrono>
 #include <cmath>
 #include <time.h>
