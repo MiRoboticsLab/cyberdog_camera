@@ -26,6 +26,8 @@
 #include "camera_service/algo_stream_consumer.hpp"
 #include "camera_service/ncs_client_dummy.hpp"
 #include "camera_utils/camera_log.hpp"
+#include <EGLStream/NV/ImageNativeBuffer.h>
+#include <NvJpegEncoder.h>
 
 namespace cyberdog
 {
@@ -198,25 +200,52 @@ int ArgusCameraContext::takePicture(const char * path, int width, int height)
     return CAM_ERROR;
   }
 
-  EGLStream::Image * image = iFrame->getImage();
-  if (!image) {
-    CAM_ERR("Failed to get image.");
+  EGLStream::NV::IImageNativeBuffer *iNativeBuffer =
+      Argus::interface_cast<EGLStream::NV::IImageNativeBuffer>(iFrame->getImage());
+  if (!iNativeBuffer) {
+    CAM_ERR("IImageNativeBuffer not supported by Image.");
+    return CAM_ERROR;
+  }
+  int fd = iNativeBuffer->createNvBuffer(captureSize,
+          NvBufferColorFormat_NV12,
+          NvBufferLayout_BlockLinear);
+  if (fd == -1) {
+    CAM_ERR("Failed to createNvBuffer.");
     return CAM_ERROR;
   }
 
-  EGLStream::IImageJPEG * iJPEG = Argus::interface_cast<EGLStream::IImageJPEG>(image);
-  if (!iJPEG) {
-    CAM_ERR("Failed to get IImageJPEG interface.");
+  NvJPEGEncoder *jpegEncoder = NvJPEGEncoder::createJPEGEncoder("jpenenc");
+  if (!jpegEncoder) {
+    CAM_ERR("Failed to create JPEGEncoder.");
+    NvBufferDestroy(fd);
     return CAM_ERROR;
   }
 
-  if (iJPEG->writeJPEG(path) != Argus::STATUS_OK) {
-    CAM_ERR("Failed to write JPEG to '%s'", path);
-    return CAM_ERROR;
+  int ret = CAM_SUCCESS;
+  size_t jpeg_size = 5 * 1024 * 1024;
+  uint8_t *jpeg_buf = new uint8_t[5 * 1024 * 1024];
+  if (jpegEncoder->encodeFromFd(fd, JCS_YCbCr, &jpeg_buf, jpeg_size, 95) != 0) {
+    CAM_ERR("Failed to encode buffer to jpeg.");
+    ret = CAM_ERROR;
   }
+
+  if (ret == CAM_SUCCESS) {
+    std::ofstream outputFile = std::ofstream(path);
+    outputFile.write((char *)jpeg_buf, jpeg_size);
+    if (outputFile.tellp() != (int)jpeg_size) {
+      CAM_ERR("Failed to write jpeg file, maybe no space.");
+      ret = CAM_ERROR;
+      remove_file(path);
+    }
+    outputFile.close();
+  }
+
   NCSClient::getInstance().play(SoundShutter);
+  NvBufferDestroy(fd);
+  delete jpeg_buf;
+  delete jpegEncoder;
 
-  return CAM_SUCCESS;
+  return ret;
 }
 
 int ArgusCameraContext::startCameraStream(
