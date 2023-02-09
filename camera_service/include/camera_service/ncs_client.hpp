@@ -18,7 +18,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <memory>
-#include "./ros2_service.hpp"
+#include "ros2_service.hpp"
 
 namespace cyberdog
 {
@@ -44,8 +44,6 @@ enum SoundType
 class NCSClient
 {
 public:
-  using GoalHandleAudio = rclcpp_action::ClientGoalHandle<AudioPlayT>;
-
   static NCSClient & getInstance();
   bool play(SoundType type);
   bool requestLed(bool on);
@@ -54,15 +52,7 @@ private:
   NCSClient();
   ~NCSClient();
 
-  bool sendGoal(int audio_id);
-  void goal_response_callback(std::shared_future<GoalHandleAudio::SharedPtr> future);
-  void feedback_callback(
-    GoalHandleAudio::SharedPtr,
-    const std::shared_ptr<const AudioPlayT::Feedback> feedback);
-  void result_callback(const GoalHandleAudio::WrappedResult & result);
-
-  rclcpp_action::Client<AudioPlayT>::SharedPtr m_playerClient;
-  rclcpp::Client<LedServiceT>::SharedPtr m_ledClient;
+  rclcpp::Publisher<AudioPlayT>::SharedPtr m_audioPub;
 };
 
 }  // namespace camera

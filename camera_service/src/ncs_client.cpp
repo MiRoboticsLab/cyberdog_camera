@@ -23,15 +23,14 @@ namespace cyberdog
 namespace camera
 {
 
-static const char * AUDIO_SERVER_NAME = "audio_play";
-static const char * LED_SERVER_NAME = "athena_led";
+static const char * AUDIO_TOPIC_NAME = "speech_play";
 
 static int gSoundAudioArrays[SoundTypeNone] =
 {
-  [SoundShutter] = 8,
-  [SoundRecordStart] = 122,
-  [SoundRecording] = 9,
-  [SoundLiveStart] = 118,
+  [SoundShutter] = 51,
+  [SoundRecordStart] = 52,
+  [SoundRecording] = 53,
+  [SoundLiveStart] = 50,
   [SoundFaceAddStart] = 103,
   [SoundFaceNumWarn] = 113,
   [SoundFacePoseWarn] = 115,
@@ -50,11 +49,10 @@ NCSClient & NCSClient::getInstance()
 
 NCSClient::NCSClient()
 {
+  auto qos = rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 10));
+  qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+  m_audioPub = CameraManager::getInstance()->create_publisher<AudioPlayT>(AUDIO_TOPIC_NAME, qos);
   CAM_INFO("Create");
-
-  m_playerClient =
-    CameraManager::getInstance()->create_action_client<AudioPlayT>(AUDIO_SERVER_NAME);
-  m_ledClient = CameraManager::getInstance()->create_service_client<LedServiceT>(LED_SERVER_NAME);
 }
 
 NCSClient::~NCSClient()
@@ -66,9 +64,10 @@ bool NCSClient::play(SoundType type)
 {
   bool ret = true;
 
-  if (gSoundAudioArrays[type] > 0) {
-    ret = sendGoal(gSoundAudioArrays[type]);
-  }
+  auto msg = std::make_unique<AudioPlayT>();
+  msg->module_name = "CAMERA";
+  msg->play_id = gSoundAudioArrays[type];
+  m_audioPub->publish(std::move(msg));
 
   return ret;
 }
@@ -77,75 +76,8 @@ bool NCSClient::requestLed(bool on)
 {
   bool ret = true;
 
-  CAM_INFO("Request led on/off: %d", on);
-  auto request = std::make_shared<LedServiceT::Request>();
-  if (on) {
-    request->command = LedServiceT::Request::HEAD_LED_SKYBLUE_ON;
-  } else {
-    request->command = LedServiceT::Request::HEAD_LED_DARKBLUE_ON;
-  }
-  request->clientid = 0;
-
-  if (!m_ledClient->wait_for_service(std::chrono::seconds(1))) {
-    CAM_ERR("Waiting for led service timeout.");
-    return false;
-  }
-
-  m_ledClient->async_send_request(request);
-
   return ret;
 }
-
-bool NCSClient::sendGoal(int audio_id)
-{
-  using namespace std::placeholders;
-
-  // sound playing should not block service call, so we just wait for a short time.
-  if (!m_playerClient->wait_for_action_server(std::chrono::seconds(1))) {
-    CAM_ERR("Audio server not available after waiting, id: %d", audio_id);
-    return false;
-  }
-
-  auto goal_msg = AudioPlayT::Goal();
-  goal_msg.order.name.id = audio_id;
-  goal_msg.order.user.id = 4;  // camera
-
-  CAM_INFO("Send audio play request %d", audio_id);
-
-  auto send_goal_options = rclcpp_action::Client<AudioPlayT>::SendGoalOptions();
-  send_goal_options.goal_response_callback =
-    std::bind(&NCSClient::goal_response_callback, this, _1);
-  send_goal_options.feedback_callback =
-    std::bind(&NCSClient::feedback_callback, this, _1, _2);
-  send_goal_options.result_callback =
-    std::bind(&NCSClient::result_callback, this, _1);
-  m_playerClient->async_send_goal(goal_msg, send_goal_options);
-
-  return true;
-}
-
-void NCSClient::goal_response_callback(std::shared_future<GoalHandleAudio::SharedPtr> future)
-{
-  auto goal_handle = future.get();
-  if (!goal_handle) {
-    CAM_INFO("Goal was rejected by server");
-  } else {
-    CAM_INFO("Goal accepted by server, waiting for result");
-  }
-}
-
-void NCSClient::feedback_callback(
-  GoalHandleAudio::SharedPtr,
-  const std::shared_ptr<const AudioPlayT::Feedback> feedback)
-{
-  CAM_DEBUG("status: %u", feedback->feed.status);
-}
-
-void NCSClient::result_callback(const GoalHandleAudio::WrappedResult & result)
-{
-  CAM_INFO("result: %u", result.result->result.error);
-}
-
 
 }  // namespace camera
 }  // namespace cyberdog

@@ -24,7 +24,7 @@
 #include "camera_service/h264_stream_consumer.hpp"
 #include "camera_service/rgb_stream_consumer.hpp"
 #include "camera_service/algo_stream_consumer.hpp"
-#include "camera_service/ncs_client_dummy.hpp"
+#include "camera_service/ncs_client.hpp"
 #include "camera_utils/camera_log.hpp"
 #include <EGLStream/NV/ImageNativeBuffer.h>
 #include <NvJpegEncoder.h>
@@ -413,7 +413,7 @@ int ArgusCameraContext::startPreview(int width, int height, std::string & usage)
     STREAM_TYPE_H264,
     Size2D<uint32_t>(width, height), &usage);
 
-  if (ret == CAM_SUCCESS && usage == "preview") {
+  if (ret == CAM_SUCCESS/* && usage == "preview"*/) {
     NCSClient::getInstance().play(SoundLiveStart);
   }
   if (ret == CAM_INVALID_STATE) {

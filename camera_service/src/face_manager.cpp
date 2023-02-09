@@ -26,7 +26,7 @@
 #include "camera_service/face_manager.hpp"
 #include "camera_service/camera_manager.hpp"
 #include "camera_algo/algo_dispatcher.hpp"
-#include "camera_service/ncs_client_dummy.hpp"
+#include "camera_service/ncs_client.hpp"
 #include "camera_utils/camera_log.hpp"
 
 namespace cyberdog
