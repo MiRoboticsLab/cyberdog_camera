@@ -22,7 +22,7 @@
 #include <string>
 #include "camera_algo/face_detect.hpp"
 #include "camera_service/camera_manager.hpp"
-#include "camera_service/ncs_client_dummy.hpp"
+#include "camera_service/ncs_client.hpp"
 #include "camera_utils/camera_utils.hpp"
 #include "camera_utils/camera_log.hpp"
 

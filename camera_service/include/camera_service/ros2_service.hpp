@@ -24,8 +24,7 @@
 #include "protocol/msg/body_info.hpp"
 #include "protocol/msg/face_info.hpp"
 #include "protocol/msg/face_result.hpp"
-// #include "protocol/action/audio_play.hpp"
-// #include "ception_msgs/srv/sensor_detection_node.hpp"
+#include "protocol/msg/audio_play.hpp"
 
 using CameraServiceT = protocol::srv::CameraService;
 using FaceManagerT = protocol::srv::FaceManager;
@@ -34,7 +33,6 @@ using BodyT = protocol::msg::Body;
 using FaceInfoT = protocol::msg::FaceInfo;
 using FaceT = protocol::msg::Face;
 using FaceResultT = protocol::msg::FaceResult;
-// using AudioPlayT = protocol::action::AudioPlay;
-// using LedServiceT = ception_msgs::srv::SensorDetectionNode;
+using AudioPlayT = protocol::msg::AudioPlay;
 
 #endif  // CAMERA_SERVICE__ROS2_SERVICE_HPP_

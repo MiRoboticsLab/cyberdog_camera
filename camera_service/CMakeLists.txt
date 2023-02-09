@@ -46,7 +46,7 @@ add_library(${PROJECT_NAME} SHARED
   src/face_manager_node.cpp
   src/h264_stream_consumer.cpp
   src/main_camera_node.cpp
-  src/ncs_client_dummy.cpp
+  src/ncs_client.cpp
   src/rgb_stream_consumer.cpp
   src/video_stream_consumer.cpp
 )

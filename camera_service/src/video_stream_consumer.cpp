@@ -15,7 +15,7 @@
 #define LOG_TAG "VideoStream"
 #include <string>
 #include "camera_service/video_stream_consumer.hpp"
-#include "camera_service/ncs_client_dummy.hpp"
+#include "camera_service/ncs_client.hpp"
 #include "camera_utils/camera_log.hpp"
 #include "camera_utils/camera_utils.hpp"
 
