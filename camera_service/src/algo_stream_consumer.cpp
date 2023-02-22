@@ -15,7 +15,6 @@
 #define LOG_TAG "AlgoStream"
 #include "camera_service/algo_stream_consumer.hpp"
 #include "camera_utils/camera_log.hpp"
-#include "camera_algo/algo_dispatcher.hpp"
 #include "camera_service/shared_memory_op.hpp"
 #include "camera_service/semaphore_op.hpp"
 
@@ -96,8 +95,6 @@ bool AlgoStreamConsumer::threadInitialize()
   m_convert = new ColorConvert(m_size.width(), m_size.height());
   m_convert->initialze(m_rgbaFd);
 
-  AlgoDispatcher::getInstance().setBufferDoneCallback(bufferDoneCallback, this);
-
   return true;
 }
 
@@ -109,9 +106,6 @@ bool AlgoStreamConsumer::threadShutdown()
   if (m_rgbaFd > 0) {
     NvBufferDestroy(m_rgbaFd);
   }
-
-  AlgoDispatcher::getInstance().setAlgoEnabled(ALGO_FACE_DETECT, false);
-  AlgoDispatcher::getInstance().setAlgoEnabled(ALGO_BODY_DETECT, false);
 
   return StreamConsumer::threadShutdown();
 }
@@ -161,7 +155,8 @@ bool AlgoStreamConsumer::processBuffer(Buffer * buffer)
   buf.timestamp = ts;
   buf.fd = fd;
 
-  if (AlgoDispatcher::getInstance().needProcess(m_frameCount)) {
+  //default framerate is 30fps
+  if (m_frameCount % 3 == 0) {
     NvBufferTransformParams transform_params;
     NvBufferRect src_rect, dest_rect;
     memset(&transform_params, 0, sizeof(transform_params));
@@ -182,7 +177,6 @@ bool AlgoStreamConsumer::processBuffer(Buffer * buffer)
     transform_params.dst_rect = dest_rect;
 
     NvBufferTransform(fd, m_rgbaFd, &transform_params);
-    // m_convert->convertRGBAToBGR(buf.data);
     if (shm_addr_ != nullptr) {
       int ret = WaitSem(sem_set_id_, 1);
       if (ret == 0) {
@@ -194,10 +188,8 @@ bool AlgoStreamConsumer::processBuffer(Buffer * buffer)
       }
     }
 
-    AlgoDispatcher::getInstance().processImageBuffer(m_frameCount, buf);
-  } else {
-    imageBufferDone(buf);
   }
+  imageBufferDone(buf);
 
   m_frameCount++;
 
