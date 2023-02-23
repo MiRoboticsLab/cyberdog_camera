@@ -148,6 +148,12 @@ bool RGBStreamConsumer::processBuffer(Buffer * buffer)
   return true;
 }
 
+rclcpp::Clock clock;
+#define LOG_MILLSECONDS(ms, fmt, ...) do { \
+  RCLCPP_INFO_THROTTLE( \
+    rclcpp::get_logger(LOG_TAG), clock, ms, "%s: " fmt, __FUNCTION__, ##__VA_ARGS__); \
+} while (0)
+
 void RGBStreamConsumer::publishImage(uint64_t frame_id, ImageBuffer & buf)
 {
   auto msg = std::make_unique<sensor_msgs::msg::Image>();
@@ -165,6 +171,7 @@ void RGBStreamConsumer::publishImage(uint64_t frame_id, ImageBuffer & buf)
   msg->header.stamp.nanosec = buf.timestamp.tv_nsec;
 
   CAM_DEBUG("Publishing image #%zu", frame_id);
+  LOG_MILLSECONDS(3000, "Publishing image #%zu", frame_id);
   m_publisher->publish(std::move(msg));
 }
 
