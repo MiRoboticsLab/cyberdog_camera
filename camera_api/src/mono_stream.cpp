@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define LOG_TAG "CameraStream"
+#define LOG_TAG "MONOStream"
 #include <string>
 #include <memory>
 #include <utility>
 #include "mono_stream.hpp"
 #include "camera_utils/camera_log.hpp"
-
-#define LOG_TAG "MONOSTREAM"
 
 namespace cyberdog
 {

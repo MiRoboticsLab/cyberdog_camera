@@ -17,14 +17,7 @@
 
 int frame_callback(cv::Mat &frame, uint64_t ts,uint32_t frame_number, void * args)
 {
-  static int count = 0;
   RCLCPP_INFO(rclcpp::get_logger("camera_test"), "%s: ts - %llu", __FUNCTION__, ts);
-  /*if (count++ == 30) {
-    FILE * fp = fopen("rgb111.rgb", "wb+");
-
-    fwrite(frame.data, 1, frame.cols * frame.rows * frame.channels(), fp);
-    fclose(fp);
-  }*/
   return 0;
 }
 

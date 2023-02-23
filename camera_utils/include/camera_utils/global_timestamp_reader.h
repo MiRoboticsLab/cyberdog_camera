@@ -49,9 +49,9 @@ namespace camera
         void get_a_b(double x, double& a, double& b) const;
 
     private:
+        CSample _base_sample;
         unsigned int _buffer_size;
         std::deque<CSample> _last_values;
-        CSample _base_sample;
         double _prev_a, _prev_b;    //Linear regression coeffitions - previously used values.
         double _dest_a, _dest_b;    //Linear regression coeffitions - recently calculated.
         double _prev_time, _time_span_ms;
@@ -76,13 +76,13 @@ namespace camera
     private:
         global_time_interface* _device;
         unsigned int _poll_intervals_ms;
+        CLinearCoefficients _coefs;
         int             _users_count;
-        active_object<> _active_object;
         mutable std::recursive_mutex _read_mtx; // Watch only 1 reader at a time.
         mutable std::recursive_mutex _enable_mtx; // Watch only 1 start/stop operation at a time.
-        CLinearCoefficients _coefs;
-        double _min_command_delay;
         bool _is_ready;
+        double _min_command_delay;
+        active_object<> _active_object;
     };
 
     class global_timestamp_reader
