@@ -32,18 +32,9 @@ add_compile_options(-Wno-pedantic
 )
 
 add_library(${PROJECT_NAME} SHARED
-  src/camera_algo/algo_dispatcher.cpp
-  src/camera_algo/algorithm_base.cpp
-  src/camera_algo/body_detect.cpp
-  src/camera_algo/body_detector.cpp
-  src/camera_algo/face_detect.cpp
-  src/camera_algo/face_detector.cpp
-  src/camera_algo/feature_detector.cpp
   src/algo_stream_consumer.cpp
   src/argus_camera_context.cpp
   src/camera_manager.cpp
-  src/face_manager.cpp
-  src/face_manager_node.cpp
   src/h264_stream_consumer.cpp
   src/main_camera_node.cpp
   src/ncs_client.cpp

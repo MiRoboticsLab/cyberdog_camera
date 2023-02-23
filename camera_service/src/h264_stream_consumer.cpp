@@ -20,7 +20,6 @@
 #include "camera_service/h264_stream_consumer.hpp"
 #include "camera_service/camera_manager.hpp"
 #include "camera_service/ncs_client.hpp"
-#include "camera_algo/algo_dispatcher.hpp"
 #include "camera_utils/camera_log.hpp"
 
 #define USE_SOFT_ENC 1

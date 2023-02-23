@@ -469,7 +469,7 @@ int ArgusCameraContext::startRgbStream()
 
 int ArgusCameraContext::stopRgbStream()
 {
-  return  stopCameraStream(STREAM_TYPE_ALGO);
+  return stopCameraStream(STREAM_TYPE_ALGO);
 }
 
 bool ArgusCameraContext::isRecording()

@@ -21,7 +21,6 @@
 #include <opencv2/opencv.hpp>
 #include "camera_service/main_camera_node.hpp"
 #include "camera_service/camera_manager.hpp"
-#include "camera_service/face_manager_node.hpp"
 #include "camera_utils/camera_log.hpp"
 #include "camera_utils/camera_utils.hpp"
 
@@ -93,13 +92,6 @@ void CameraServerNode::on_configure()
     "camera_service",
     std::bind(
       &CameraServerNode::serviceCallback, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-
-  m_faceManager = create_service<FaceManagerT>(
-    "face_manager",
-    std::bind(
-      &FaceManagerNode::serviceCallback,
-      std::make_shared<FaceManagerNode>(),
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   CameraManager::getInstance()->initCamera();

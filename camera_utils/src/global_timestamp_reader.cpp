@@ -249,7 +249,7 @@ namespace camera
         // }
         catch (const std::exception& ex)
         {
-            printf("Error during time_diff_keeper polling: ", ex.what());
+            printf("Error during time_diff_keeper polling: %s", ex.what());
         }
         catch (...)
         {

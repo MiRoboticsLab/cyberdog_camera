@@ -20,7 +20,6 @@
 #include <map>
 #include <vector>
 #include "camera_service/camera_manager.hpp"
-#include "camera_algo/algo_dispatcher.hpp"
 #include "camera_utils/camera_utils.hpp"
 #include "camera_utils/camera_log.hpp"
 
@@ -206,65 +205,13 @@ int CameraManager::setParameter(const std::string & key, const std::string & val
   if (key == "face-interval") {
     printf("service: set face detect interval\n");
     if (atoi(value.c_str()) > 0) {
-      setVisionAlgoEnabled(ALGO_FACE_DETECT, true);
+      m_camera->startRgbStream();
     } else {
-      setVisionAlgoEnabled(ALGO_FACE_DETECT, false);
-    }
-  }
-
-  if (key == "body-interval") {
-    printf("service: set body detect interval\n");
-    if (atoi(value.c_str()) > 0) {
-      setVisionAlgoEnabled(ALGO_BODY_DETECT, true);
-    } else {
-      setVisionAlgoEnabled(ALGO_BODY_DETECT, false);
-    }
-  }
-
-  if (key == "reid-bbox") {
-    printf("service: set reid bbox\n");
-    std::vector<int> bbox;
-    std::stringstream input(value);
-    std::string tmp;
-    while (getline(input, tmp, ',')) {
-      bbox.push_back(atoi(tmp.c_str()));
-    }
-    if (4 != bbox.size()) {
-      return CAM_INVALID_ARG;
-    } else {
-      if (!AlgoDispatcher::getInstance().setReidObject(bbox)) {
-        return CAM_INVALID_STATE;
-      }
+      m_camera->stopRgbStream();
     }
   }
 
   return CAM_SUCCESS;
-}
-
-void CameraManager::setVisionAlgoEnabled(int algo_type, bool enable)
-{
-  CAM_INFO("algo %d : %d", algo_type, enable);
-  if (enable) {
-    m_camera->startRgbStream();
-    AlgoDispatcher::getInstance().setAlgoEnabled(algo_type, true);
-  } else {
-    AlgoDispatcher::getInstance().setAlgoEnabled(algo_type, false);
-  }
-
-  processAlgoParam();
-}
-
-void CameraManager::processAlgoParam()
-{
-  bool algo_on = false;
-
-  for (int i = 0; i < ALGO_TYPE_NONE; i++) {
-    algo_on |= AlgoDispatcher::getInstance().getAlgoEnabled(i);
-  }
-
-  if (!algo_on) {
-    m_camera->stopRgbStream();
-  }
 }
 
 int CameraManager::startImagePublish(int width, int height, int rate)
