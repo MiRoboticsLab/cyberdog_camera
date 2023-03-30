@@ -37,6 +37,11 @@ public:
   virtual bool threadShutdown();
   virtual bool processBuffer(Buffer * buffer);
 
+  void setName(const std::string &name)
+  {
+    name_ = name;
+  }
+
 private:
   void publishImage(ImageBuffer & buf);
 
@@ -45,6 +50,7 @@ private:
   void *cb_args_;
   int rgba_fd_;
   ColorConvert * format_convert_;
+  std::string name_;
 };
 
 }  // namespace camera
