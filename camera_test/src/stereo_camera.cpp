@@ -9,6 +9,8 @@
 #include "camera_utils/global_timestamp_reader.h"
 #include "cyberdog_visions_interfaces/msg/metadata.hpp"
 
+#define ENABLE_CAM_INFINITE 0
+
 namespace cyberdog
 {
 namespace camera
@@ -155,6 +157,12 @@ int CameraTopic::sFrameCallback(cv::Mat & frame, uint64_t timestamp, uint32_t ca
   return 0;
 }
 
+rclcpp::Clock clock;
+#define LOG_MILLSECONDS(ms, fmt, ...) do { \
+  RCLCPP_INFO_THROTTLE( \
+    rclcpp::get_logger(LOG_TAG), clock, ms, "%s: " fmt, __FUNCTION__, ##__VA_ARGS__); \
+} while (0)
+
 void CameraTopic::PublishImage(cv::Mat & frame, uint64_t timestamp,uint32_t frame_number)
 {
   auto msg = std::make_unique<sensor_msgs::msg::Image>();
@@ -191,6 +199,7 @@ void CameraTopic::PublishImage(cv::Mat & frame, uint64_t timestamp,uint32_t fram
     publishMetadata(real_ts_sys_nano,timestamp,frame_number);
   }
 
+  LOG_MILLSECONDS(3000, "%s Publishing image #%zu", name_.c_str(), frame_number);
 }
 
 void CameraTopic::publishMetadata(uint64_t t_real_sys, uint64_t t_hw, uint32_t frame_number)
@@ -302,6 +311,9 @@ void StereoCameraNode::InitParameters()
 
 int main(int argc, char** argv)
 {
+#if ENABLE_CAM_INFINITE
+  setenv("enableCamInfiniteTimeout", "1", 1);
+#endif
   rclcpp::init(argc, argv);
   rclcpp::executors::SingleThreadedExecutor exec;
   rclcpp::NodeOptions options;

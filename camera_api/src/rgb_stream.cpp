@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define LOG_TAG "CameraStream"
+#define LOG_TAG "RGBStream"
 #include <string>
 #include <memory>
 #include <utility>
@@ -83,7 +83,7 @@ bool RgbStream::processBuffer(Buffer * buffer)
 
   float frameRate;
   if (getFrameRate(frameRate)) {
-    CAM_INFO("%.2f frames per second", frameRate);
+    CAM_INFO("[%s] %.2f frames per second", name_.c_str(), frameRate);
   }
 
   uint64_t ts = 0;
@@ -95,8 +95,6 @@ bool RgbStream::processBuffer(Buffer * buffer)
   if (iMetadata) {
     ts = iMetadata->getSensorTimestamp();
     capture_id = iMetadata->getCaptureId();
-
-
   }
 
   DmaBuffer * dma_buf = DmaBuffer::fromArgusBuffer(buffer);

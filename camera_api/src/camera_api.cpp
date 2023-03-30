@@ -90,13 +90,16 @@ bool CameraHolder::startStream(
     return false;
   }
 
+  std::string name = "camera" + std::to_string(camera_id_);
   switch (format) {
     case kImageFormatBGR:
     case kImageFormatRGB:
       m_stream = new RgbStream(Size2D<uint32_t>(width, height), format, cb, args);
+      dynamic_cast<RgbStream *>(m_stream)->setName(name);
       break;
     case kImageFormatGRAY:
       m_stream = new MonoStream(Size2D<uint32_t>(width, height), format, cb, args);
+      dynamic_cast<MonoStream *>(m_stream)->setName(name);
       break;
     default:
       CAM_ERR("Unsupported image format %d", format);
@@ -182,6 +185,7 @@ bool CameraHolder::stopStream()
   }
 
   CameraDispatcher::getInstance().stopRepeat(m_captureSession.get());
+  CameraDispatcher::getInstance().cancelRequests(m_captureSession.get());
   CameraDispatcher::getInstance().waitForIdle(m_captureSession.get());
   CAM_INFO("Stop repeat capture requests.\n");
 
